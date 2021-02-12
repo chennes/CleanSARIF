@@ -57,12 +57,59 @@ SARIF::SARIF(const std::string& file)
 
 std::vector<std::tuple<std::string, std::string>> SARIF::Rules() const
 {
-	return std::vector<std::tuple<std::string, std::string>>();
+	std::vector<std::tuple<std::string, std::string>> ruleTuples;
+	auto o = _json.object();
+	if (o.contains("runs") && o["runs"].isArray()) {
+		auto runs = o["runs"].toArray().first().toObject();
+		if (runs.contains("tool") && runs["tool"].isObject()) {
+			auto tool = runs["tool"].toObject();
+			if (tool.contains("driver") && tool["driver"].isObject()) {
+				auto driver = tool["driver"].toObject();
+				if (driver.contains("rules") && driver["rules"].isArray()) {
+					auto rules = driver["rules"].toArray();
+					for (auto rule = rules.begin(); rule != rules.end(); ++rule) {
+						if (rule->isObject()) {
+							auto ruleObject = rule->toObject();
+							std::string id;
+							if (ruleObject.contains("id")) 
+								id = ruleObject["id"].toString().toStdString();
+							std::string text;
+							if (ruleObject.contains("shortDescription") && ruleObject["shortDescription"].toObject().contains("text"))
+								text = ruleObject["shortDescription"].toObject()["text"].toString().toStdString();
+							else if (ruleObject.contains("fullDescription") && ruleObject["fullDescription"].toObject().contains("text"))
+								text = ruleObject["fullDescription"].toObject()["text"].toString().toStdString();
+							else if (ruleObject.contains("help") && ruleObject["fullDescription"].toObject().contains("text"))
+								text = ruleObject["help"].toObject()["text"].toString().toStdString();
+							if (!id.empty())
+								ruleTuples.emplace_back(id, text);
+						}
+					}
+				}
+			}
+		}
+	}
+	return ruleTuples;
 }
 
 std::string SARIF::GetBase() const
 {
-	return std::string();
+	std::string base;
+	std::string uribase;
+	auto o = _json.object();
+	if (o.contains("runs") && o["runs"].isArray()) {
+		auto runs = o["runs"].toArray().first().toObject();
+		if (runs.contains("results") && runs["results"].isArray()) {
+			auto resultArray = runs["results"].toArray();
+			for (auto result = resultArray.begin(); result != resultArray.end(); ++result) {
+				auto uri = SARIF::GetArtifactUri(result->toObject());
+				if (base.empty())
+					base = uri;
+				else
+					base = SARIF::MaxMatch(base, uri);
+			}
+		}
+	}
+	return base;
 }
 
 void SARIF::SetBase(const std::string& newBase)
@@ -95,4 +142,39 @@ void SARIF::RemoveLocationFilter(const std::string& regex)
 std::vector<std::string> SARIF::LocationFilters() const
 {
 	return std::vector<std::string>();
+}
+
+std::string SARIF::GetArtifactUri(const QJsonObject& result)
+{
+	/*
+	"locations" : [{
+		"physicalLocation" : {
+			"artifactLocation" : {
+				"uri" : "src/Mod/Sketcher/App/GeometryFacade.h",
+					"uriBaseId" : "%SRCROOT%",
+	 */
+
+	std::string uri;
+	if (result.contains("locations") && result["locations"].isArray()) {
+		auto location = result["locations"].toArray().first().toObject();
+		if (location.contains("physicalLocation") && location["physicalLocation"].isObject()) {
+			auto physicalLocation = location["physicalLocation"].toObject();
+			if (physicalLocation.contains("artifactLocation") && physicalLocation["artifactLocation"].isObject()) {
+				auto artifactLocation = physicalLocation["artifactLocation"].toObject();
+				if (artifactLocation.contains("uri") && artifactLocation["uri"].isString()) {
+					uri = artifactLocation["uri"].toString().toStdString();
+				}
+			}
+		}
+	}
+
+	return uri;
+}
+
+std::string SARIF::MaxMatch(const std::string& a, const std::string& b)
+{
+	int location = 0;
+	while (location < a.size() && location < b.size() && a[location] == b[location])
+		++location;
+	return a.substr(0,location);
 }

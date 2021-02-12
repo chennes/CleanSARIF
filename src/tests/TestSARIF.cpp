@@ -71,3 +71,18 @@ TEST_CASE("Read SARIF file", "[sarif]") {
 		SARIF("PVS-freecad-23754_210125.sarif")
 	);
 }
+
+TEST_CASE("Count of rules", "[sarif]") {
+	const int expectedRuleCount = 113; // cat PVS-freecad-23754_210125.sarif | grep "\"id\":" --count
+
+	auto sarif = SARIF("PVS-freecad-23754_210125.sarif");
+	auto rules = sarif.Rules();
+	REQUIRE(rules.size() == expectedRuleCount);
+}
+
+TEST_CASE("Base location is correct", "[sarif]") {
+	const std::string expectedBaseLocation("/home/jdoe/repo/");
+	auto sarif = SARIF("PVS-freecad-23754_210125.sarif");
+	auto baseLocation = sarif.GetBase();
+	REQUIRE(baseLocation == expectedBaseLocation);
+}
