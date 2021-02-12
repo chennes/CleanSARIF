@@ -89,10 +89,50 @@ TEST_CASE("Rule suppression works in code", "[sarif]") {
 	REQUIRE(suppressionCount == expectedSuppressionCount);
 }
 
+TEST_CASE("Rules are returned", "[sarif]") {
+	const std::string ruleToSuppress = "V008";
+	auto sarif = SARIF("PVS-freecad-23754_210125.sarif");
+	auto ruleList = sarif.SuppressedRules();
+	REQUIRE(ruleList.size() == 0);
+	auto suppressionCount = sarif.SuppressRule(ruleToSuppress);
+	ruleList = sarif.SuppressedRules();
+	REQUIRE(ruleList.size() == 1);
+	REQUIRE(ruleList.front() == ruleToSuppress);
+}
+
+TEST_CASE("Rules can be erased", "[sarif]") {
+	const std::string ruleToSuppress = "V008";
+	auto sarif = SARIF("PVS-freecad-23754_210125.sarif");
+	auto suppressionCount = sarif.SuppressRule(ruleToSuppress);
+	sarif.UnsuppressRule(ruleToSuppress);
+	auto ruleList = sarif.SuppressedRules();
+	REQUIRE(ruleList.empty());
+}
+
 TEST_CASE("File suppression works in code", "[sarif]") {
 	const std::string regexForSuppression("^.*Mod/Draft/.*\\.cpp$");
 	const int expectedSuppressionCount = 9;
 	auto sarif = SARIF("PVS-freecad-23754_210125.sarif");
 	int suppressionCount = sarif.AddLocationFilter(regexForSuppression);
 	REQUIRE(suppressionCount == expectedSuppressionCount);
+}
+
+TEST_CASE("Regexes are returned", "[sarif]") {
+	const std::string regexForSuppression("^.*Mod/Draft/.*\\.cpp$");
+	auto sarif = SARIF("PVS-freecad-23754_210125.sarif");
+	auto ruleList = sarif.LocationFilters();
+	REQUIRE(ruleList.size() == 0);
+	int suppressionCount = sarif.AddLocationFilter(regexForSuppression);
+	ruleList = sarif.LocationFilters();
+	REQUIRE(ruleList.size() == 1);
+	REQUIRE(ruleList.front() == regexForSuppression);
+}
+
+TEST_CASE("Regexes can be erased", "[sarif]") {
+	const std::string regexForSuppression("^.*Mod/Draft/.*\\.cpp$");
+	auto sarif = SARIF("PVS-freecad-23754_210125.sarif");
+	int suppressionCount = sarif.AddLocationFilter(regexForSuppression);
+	sarif.RemoveLocationFilter(regexForSuppression);
+	auto ruleList = sarif.LocationFilters();
+	REQUIRE(ruleList.empty());
 }

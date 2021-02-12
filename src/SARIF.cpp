@@ -171,11 +171,12 @@ int SARIF::AddLocationFilter(const std::string& regex)
 
 void SARIF::RemoveLocationFilter(const std::string& regex)
 {
+	_locationFilters.erase(std::remove(_locationFilters.begin(), _locationFilters.end(), regex), _locationFilters.end());
 }
 
 std::vector<std::string> SARIF::LocationFilters() const
 {
-	return std::vector<std::string>();
+	return _locationFilters;
 }
 
 std::string SARIF::GetArtifactUri(const QJsonObject& result)
