@@ -22,24 +22,9 @@
 
 #include <catch2/catch_test_macros.hpp>
 
-#include "../SARIF.h"
 #include <QFile>
 #include <QTemporaryFile>
-
-bool bytesAreEqual(const QByteArray& a, const QByteArray& b) {
-#if QT_VERSION >= QT_VERSION_CHECK(5, 12, 0)
-	return a.compare(b) == 0;
-#else
-	if (a.size() == b.size()) {
-		for (int byte = 0; byte < a.size(); ++byte) {
-			if (a[byte] != b[byte])
-				return false;
-		}
-		return true;
-	}
-	return false;
-#endif
-}
+#include "../SARIF.h"
 
 
 TEST_CASE("Fail on non-existent file", "[sarif]") {
@@ -80,9 +65,26 @@ TEST_CASE("Count of rules", "[sarif]") {
 	REQUIRE(rules.size() == expectedRuleCount);
 }
 
-TEST_CASE("Base location is correct", "[sarif]") {
+TEST_CASE("Base location is read correctly", "[sarif]") {
 	const std::string expectedBaseLocation("/home/jdoe/repo/");
 	auto sarif = SARIF("PVS-freecad-23754_210125.sarif");
 	auto baseLocation = sarif.GetBase();
 	REQUIRE(baseLocation == expectedBaseLocation);
+}
+
+TEST_CASE("Base location can be set in code", "[sarif]") {
+	auto sarif = SARIF("PVS-freecad-23754_210125.sarif");
+	auto baseLocation = sarif.GetBase();
+	std::string expectedBase = baseLocation + "EXTRA_DATA/";
+	sarif.SetBase(expectedBase);
+	std::string newBase = sarif.GetBase();
+	REQUIRE(newBase == expectedBase);
+}
+
+TEST_CASE("Rule suppression works in code", "[sarif]") {
+	const std::string ruleToSuppress = "V008";
+	const int expectedSupressionCount = 6;
+	auto sarif = SARIF("PVS-freecad-23754_210125.sarif");
+	auto suppressionCount = sarif.SuppressRule(ruleToSuppress);
+	REQUIRE(suppressionCount == expectedSupressionCount);
 }

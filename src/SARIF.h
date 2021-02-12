@@ -95,9 +95,15 @@ public:
 private:
 	QJsonDocument _json;
 
+	bool _overrideBase = false;
+	std::string _overrideBaseWith;
+	std::string _originalBasePath;
+
+	std::vector<std::string> _suppressedRules;
+
 	/**
 	 * \brief A utility function to extract the artifact URI from a single SARIF-formatted JSON result object
-	 * \param result A JSON-formatted object that conforms to the SARIF schema for a single item in the result array.
+	 * \param result - A JSON-formatted object that conforms to the SARIF schema for a single item in the result array.
 	 * In particular, it is expected to have a \a locations array with a single \a physicalLocation object, containing an
 	 * \a artifactLocation object, which contains a \a uri string. Any additional \a physicalLocation objects in the 
 	 * \a locations array are ignored.
@@ -108,4 +114,10 @@ private:
 	 * \brief Get the largest shared substring between \a a and \a b, starting from the front.
 	 */
 	static std::string MaxMatch(const std::string &a, const std::string &b);
+
+	/**
+	 * \brief Given a single result, return what rule it represents
+	 * \param result - A JSON-formatted object that conforms to the SARIF schema for a single item in the result array.
+	 */
+	static std::string GetRule(const QJsonObject& result);
 };

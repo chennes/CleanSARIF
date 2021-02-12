@@ -23,6 +23,7 @@
 #include "SARIF.h"
 
 #include <exception>
+#include <regex>
 
 #include <QFile>
 #include <QJsonDocument>
@@ -44,7 +45,21 @@ SARIF::SARIF(const std::string& file)
 	if (o.contains("$schema") && o["$schema"].isString()) {
 		auto schema = o["$schema"].toString();
 		if (schema.contains("sarif")) {
-			// This does look like a SARIF file
+			std::string base;
+			if (o.contains("runs") && o["runs"].isArray()) {
+				auto runs = o["runs"].toArray().first().toObject();
+				if (runs.contains("results") && runs["results"].isArray()) {
+					auto resultArray = runs["results"].toArray();
+					for (auto result = resultArray.begin(); result != resultArray.end(); ++result) {
+						auto uri = SARIF::GetArtifactUri(result->toObject());
+						if (base.empty())
+							base = uri;
+						else
+							base = SARIF::MaxMatch(base, uri);
+					}
+				}
+			}
+			_originalBasePath = base;
 		}
 		else {
 			throw std::exception("File read and JSON parsed, but schema is not SARIF");
@@ -93,41 +108,45 @@ std::vector<std::tuple<std::string, std::string>> SARIF::Rules() const
 
 std::string SARIF::GetBase() const
 {
-	std::string base;
-	std::string uribase;
+	if (_overrideBase)
+		return _overrideBaseWith;
+	else
+		return _originalBasePath;
+}
+
+void SARIF::SetBase(const std::string& newBase)
+{
+	_overrideBase = true;
+	_overrideBaseWith = newBase;
+}
+
+int SARIF::SuppressRule(const std::string& ruleID)
+{
+	_suppressedRules.push_back(ruleID);
+
+	int counter = 0;
 	auto o = _json.object();
 	if (o.contains("runs") && o["runs"].isArray()) {
 		auto runs = o["runs"].toArray().first().toObject();
 		if (runs.contains("results") && runs["results"].isArray()) {
 			auto resultArray = runs["results"].toArray();
 			for (auto result = resultArray.begin(); result != resultArray.end(); ++result) {
-				auto uri = SARIF::GetArtifactUri(result->toObject());
-				if (base.empty())
-					base = uri;
-				else
-					base = SARIF::MaxMatch(base, uri);
+				if (SARIF::GetRule(result->toObject()) == ruleID)
+					++counter;
 			}
 		}
 	}
-	return base;
-}
-
-void SARIF::SetBase(const std::string& newBase)
-{
-}
-
-int SARIF::SuppressRule(const std::string& ruleID)
-{
-	return 0;
+	return counter;
 }
 
 void SARIF::UnsuppressRule(const std::string& ruleID)
 {
+	_suppressedRules.erase(std::remove(_suppressedRules.begin(), _suppressedRules.end(), ruleID), _suppressedRules.end());
 }
 
 std::vector<std::string> SARIF::SuppressedRules() const
 {
-	return std::vector<std::string>();
+	return _suppressedRules;
 }
 
 int SARIF::AddLocationFilter(const std::string& regex)
@@ -146,14 +165,6 @@ std::vector<std::string> SARIF::LocationFilters() const
 
 std::string SARIF::GetArtifactUri(const QJsonObject& result)
 {
-	/*
-	"locations" : [{
-		"physicalLocation" : {
-			"artifactLocation" : {
-				"uri" : "src/Mod/Sketcher/App/GeometryFacade.h",
-					"uriBaseId" : "%SRCROOT%",
-	 */
-
 	std::string uri;
 	if (result.contains("locations") && result["locations"].isArray()) {
 		auto location = result["locations"].toArray().first().toObject();
@@ -177,4 +188,12 @@ std::string SARIF::MaxMatch(const std::string& a, const std::string& b)
 	while (location < a.size() && location < b.size() && a[location] == b[location])
 		++location;
 	return a.substr(0,location);
+}
+
+std::string SARIF::GetRule(const QJsonObject& result)
+{
+	if (result.contains("ruleId") && result["ruleId"].isString())
+		return result["ruleId"].toString().toStdString();
+	else
+		return std::string();
 }
