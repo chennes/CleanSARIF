@@ -37,6 +37,8 @@ set(UI_SRCS
 set(CPP_SRCS
     "Cleaner.h"
     "Cleaner.cpp"
+    "SARIF.h"
+    "SARIF.cpp"
 )
 
 set(APP_ICON_RESOURCE_WINDOWS "${CMAKE_CURRENT_SOURCE_DIR}/CleanSARIF.rc")

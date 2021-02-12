@@ -26,6 +26,7 @@ set(TEST_SRCS
 )
 
 set(TEST_AUX
+  cpp.hint
 )
 
 add_executable(tests ${TEST_SRCS} ${APP_SRCS})
