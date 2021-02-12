@@ -37,6 +37,16 @@ public:
 	explicit SARIF(const std::string &file);
 
 	/**
+	 * \brief Export to a new SARIF file
+	 * \param file The file to export to. Overwritten if pre-existing.
+	 * \throws If export fails for any reason, a std::exception is thrown.
+	 * The exported file reflects the application of the filters set in the various
+	 * Set* functions in this class. The new file is a correctly-formatted SARIF file that
+	 * has been filtered and modified according to those rules.
+	 */
+	void Export(const std::string& file) const;
+
+	/**
 	 * \brief List the rules present in this SARIF object
 	 * \returns a tuple containing the ID of the rule, and its help text
 	 */

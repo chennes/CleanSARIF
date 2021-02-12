@@ -70,6 +70,30 @@ SARIF::SARIF(const std::string& file)
 	}
 }
 
+void SARIF::Export(const std::string& file) const
+{
+	QJsonDocument filteredJSONDoc(_json); // Makes a copy
+
+	// Make our changes to the new copy
+	auto o = filteredJSONDoc.object();
+	if (o.contains("runs") && o["runs"].isArray()) {
+		auto runs = o["runs"].toArray().first().toObject();
+		if (runs.contains("results") && runs["results"].isArray()) {
+			auto resultArray = runs["results"].toArray();
+			for (auto result = resultArray.begin(); result != resultArray.end(); ++result) {
+			}
+		}
+	}
+
+	// Write out the copy
+	QFile newFile(QString::fromStdString(file));
+	newFile.open(QIODevice::OpenModeFlag::Truncate | QIODevice::OpenModeFlag::WriteOnly);
+	if (newFile.isOpen())
+		newFile.write(filteredJSONDoc.toBinaryData());
+	else
+		throw std::exception("Could not open requested file for writing");
+}
+
 std::vector<std::tuple<std::string, std::string>> SARIF::Rules() const
 {
 	std::vector<std::tuple<std::string, std::string>> ruleTuples;

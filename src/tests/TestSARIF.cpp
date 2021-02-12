@@ -136,3 +136,24 @@ TEST_CASE("Regexes can be erased", "[sarif]") {
 	auto ruleList = sarif.LocationFilters();
 	REQUIRE(ruleList.empty());
 }
+
+TEST_CASE("Export creates file", "[sarif]") {
+	// Cheat and use Qt to get a valid temp file name and location
+	QTemporaryFile tempFile;
+	tempFile.open();
+	std::string filename = tempFile.fileName().toStdString() + ".sarif";
+	tempFile.close();
+
+	auto sarif = SARIF("PVS-freecad-23754_210125.sarif");
+	sarif.Export(filename);
+
+	QFile exportedFile(QString::fromStdString(filename));
+	REQUIRE(exportedFile.exists());
+	QFile::remove(QString::fromStdString(filename));
+}
+
+TEST_CASE("Export reports failure to open file", "[sarif]") {
+	auto sarif = SARIF("PVS-freecad-23754_210125.sarif");
+
+	REQUIRE_THROWS(sarif.Export("/you/probably/cant/write/to/this/file.sarif"));
+}
