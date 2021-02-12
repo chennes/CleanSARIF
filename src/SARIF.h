@@ -101,6 +101,8 @@ private:
 
 	std::vector<std::string> _suppressedRules;
 
+	std::vector<std::string> _locationFilters;
+
 	/**
 	 * \brief A utility function to extract the artifact URI from a single SARIF-formatted JSON result object
 	 * \param result - A JSON-formatted object that conforms to the SARIF schema for a single item in the result array.

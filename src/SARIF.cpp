@@ -151,7 +151,22 @@ std::vector<std::string> SARIF::SuppressedRules() const
 
 int SARIF::AddLocationFilter(const std::string& regex)
 {
-	return 0;
+	_locationFilters.push_back(regex);
+	std::regex compiledRegex(regex);
+	int counter = 0;
+	auto o = _json.object();
+	if (o.contains("runs") && o["runs"].isArray()) {
+		auto runs = o["runs"].toArray().first().toObject();
+		if (runs.contains("results") && runs["results"].isArray()) {
+			auto resultArray = runs["results"].toArray();
+			for (auto result = resultArray.begin(); result != resultArray.end(); ++result) {
+				if (std::regex_search(SARIF::GetArtifactUri(result->toObject()), compiledRegex)) {
+					++counter;
+				}
+			}
+		}
+	}
+	return counter;
 }
 
 void SARIF::RemoveLocationFilter(const std::string& regex)

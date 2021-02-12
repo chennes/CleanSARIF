@@ -83,8 +83,16 @@ TEST_CASE("Base location can be set in code", "[sarif]") {
 
 TEST_CASE("Rule suppression works in code", "[sarif]") {
 	const std::string ruleToSuppress = "V008";
-	const int expectedSupressionCount = 6;
+	const int expectedSuppressionCount = 6;
 	auto sarif = SARIF("PVS-freecad-23754_210125.sarif");
 	auto suppressionCount = sarif.SuppressRule(ruleToSuppress);
-	REQUIRE(suppressionCount == expectedSupressionCount);
+	REQUIRE(suppressionCount == expectedSuppressionCount);
+}
+
+TEST_CASE("File suppression works in code", "[sarif]") {
+	const std::string regexForSuppression("^.*Mod/Draft/.*\\.cpp$");
+	const int expectedSuppressionCount = 9;
+	auto sarif = SARIF("PVS-freecad-23754_210125.sarif");
+	int suppressionCount = sarif.AddLocationFilter(regexForSuppression);
+	REQUIRE(suppressionCount == expectedSuppressionCount);
 }
