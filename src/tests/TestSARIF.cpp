@@ -22,6 +22,52 @@
 
 #include <catch2/catch_test_macros.hpp>
 
-#include "../Cleaner.h"
+#include "../SARIF.h"
 #include <QFile>
 #include <QTemporaryFile>
+
+bool bytesAreEqual(const QByteArray& a, const QByteArray& b) {
+#if QT_VERSION >= QT_VERSION_CHECK(5, 12, 0)
+	return a.compare(b) == 0;
+#else
+	if (a.size() == b.size()) {
+		for (int byte = 0; byte < a.size(); ++byte) {
+			if (a[byte] != b[byte])
+				return false;
+		}
+		return true;
+	}
+	return false;
+#endif
+}
+
+
+TEST_CASE("Fail on non-existent file", "[sarif]") {
+	REQUIRE_THROWS(
+		SARIF("Nonexistent.sarif")
+	);
+}
+
+TEST_CASE("Fail on non-JSON file", "[sarif]") {
+	REQUIRE_THROWS(
+		SARIF("NotJSON.sarif")
+	);
+}
+
+TEST_CASE("Fail on JSON file without schema", "[sarif]") {
+	REQUIRE_THROWS(
+		SARIF("NoSchema.sarif")
+	);
+}
+
+TEST_CASE("Fail on non-SARIF schema", "[sarif]") {
+	REQUIRE_THROWS(
+		SARIF("NotSARIF.sarif")
+	);
+}
+
+TEST_CASE("Read SARIF file", "[sarif]") {
+	REQUIRE_NOTHROW(
+		SARIF("PVS-freecad-23754_210125.sarif")
+	);
+}

@@ -23,6 +23,8 @@
 #include <string>
 #include <vector>
 
+#include <QJsonDocument>
+
 class SARIF
 {
 public:
@@ -89,4 +91,7 @@ public:
 	 * \brief Get the list of currently-active location filters 
 	 */
 	std::vector<std::string> LocationFilters() const;
+
+private:
+	QJsonDocument _json;
 };

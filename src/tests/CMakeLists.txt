@@ -19,18 +19,29 @@ include(Catch)
 set(APP_SRCS
   ../Cleaner.h
   ../Cleaner.cpp
+  ../SARIF.h
+  ../SARIF.cpp
 )
 
 set(TEST_SRCS
   TestCleaner.cpp
+  TestSARIF.cpp
 )
 
 set(TEST_AUX
   cpp.hint
+  PVS-freecad-23754_210125.sarif
+  NotJSON.sarif
+  NoSchema.sarif
+  NotSARIF.sarif
 )
 
 add_executable(tests ${TEST_SRCS} ${APP_SRCS})
 target_link_libraries(tests PUBLIC Qt5::Core PRIVATE Catch2::Catch2WithMain)
+
+if(WIN32)
+    windeployqt(tests)
+endif()
 
 if(TEST_AUX)
     add_custom_command(

@@ -24,9 +24,35 @@
 
 #include <exception>
 
+#include <QFile>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QJsonArray>
+
 SARIF::SARIF(const std::string& file)
 {
-	throw std::exception("Unwritten");
+	QFile infile(QString::fromStdString(file));
+	if (!infile.open(QIODevice::ReadOnly | QIODevice::Text))
+		throw std::exception("Unable to open specified file");
+	auto fileContents = infile.readAll();
+	_json = QJsonDocument::fromJson(fileContents);
+	if (_json.isNull())
+		throw std::exception("File does not contain valid JSON data");
+
+	// Make sure this is really SARIF data:
+	auto o = _json.object();
+	if (o.contains("$schema") && o["$schema"].isString()) {
+		auto schema = o["$schema"].toString();
+		if (schema.contains("sarif")) {
+			// This does look like a SARIF file
+		}
+		else {
+			throw std::exception("File read and JSON parsed, but schema is not SARIF");
+		}
+	}
+	else {
+		throw std::exception("File read, but no $schema found");
+	}
 }
 
 std::vector<std::tuple<std::string, std::string>> SARIF::Rules() const

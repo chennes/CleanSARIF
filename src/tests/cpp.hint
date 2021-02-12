@@ -3,3 +3,5 @@
 // For more information see https://go.microsoft.com/fwlink/?linkid=865984
 #define REQUIRE(__VA_ARGS__) INTERNAL_CATCH_TEST( "REQUIRE", Catch::ResultDisposition::Normal, __VA_ARGS__ )
 #define REQUIRE(__VA_ARGS__) (void)(0)
+#define REQUIRE_NOTHROW(__VA_ARGS__) INTERNAL_CATCH_NO_THROW( "REQUIRE_NOTHROW", Catch::ResultDisposition::Normal, __VA_ARGS__ )
+#define REQUIRE_NOTHROW(__VA_ARGS__) (void)(0)
