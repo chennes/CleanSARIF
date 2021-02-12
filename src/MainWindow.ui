@@ -1,0 +1,231 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="windowModality">
+   <enum>Qt::ApplicationModal</enum>
+  </property>
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>600</width>
+    <height>500</height>
+   </rect>
+  </property>
+  <property name="acceptDrops">
+   <bool>true</bool>
+  </property>
+  <property name="windowTitle">
+   <string>CleanSARIF</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QVBoxLayout" name="verticalLayout">
+    <item>
+     <widget class="QLabel" name="versionLabel">
+      <property name="font">
+       <font>
+        <pointsize>6</pointsize>
+       </font>
+      </property>
+      <property name="text">
+       <string>Replaced with version number</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <layout class="QGridLayout" name="gridLayout">
+      <item row="1" column="2">
+       <widget class="QPushButton" name="browseOutputFileButton">
+        <property name="text">
+         <string>Browse...</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QLineEdit" name="outputFileLineEdit"/>
+      </item>
+      <item row="3" column="2">
+       <widget class="QPushButton" name="browseBasePathButton">
+        <property name="text">
+         <string>Browse...</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="0">
+       <widget class="QLabel" name="label">
+        <property name="text">
+         <string>Input file:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="2">
+       <widget class="QPushButton" name="browseInputFileButton">
+        <property name="text">
+         <string>Browse...</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="label_2">
+        <property name="text">
+         <string>Output file: </string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="1">
+       <widget class="QLineEdit" name="basePathLineEdit"/>
+      </item>
+      <item row="0" column="1">
+       <widget class="QLineEdit" name="inputFileLineEdit"/>
+      </item>
+      <item row="3" column="0">
+       <widget class="QLabel" name="basePathLabel">
+        <property name="text">
+         <string>Base path:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0" colspan="3">
+       <widget class="Line" name="line_2">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item>
+     <layout class="QHBoxLayout" name="horizontalLayout_2"/>
+    </item>
+    <item>
+     <layout class="QHBoxLayout" name="mainSettingsLayout">
+      <item>
+       <layout class="QVBoxLayout" name="settingsLeft">
+        <item>
+         <widget class="QLabel" name="fileFiltersLabel">
+          <property name="text">
+           <string>File filters</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QTableWidget" name="fileFiltersTable">
+          <property name="columnCount">
+           <number>2</number>
+          </property>
+          <column>
+           <property name="text">
+            <string>Regex</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>Matches</string>
+           </property>
+          </column>
+         </widget>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout">
+          <item>
+           <widget class="QPushButton" name="removeButton">
+            <property name="text">
+             <string>Remove</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="newButton">
+            <property name="text">
+             <string>New...</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QVBoxLayout" name="settingsRight">
+        <item>
+         <widget class="QLabel" name="includedQueriesLabel">
+          <property name="text">
+           <string>Included queries</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QTableWidget" name="queriesTable">
+          <property name="sortingEnabled">
+           <bool>false</bool>
+          </property>
+          <property name="columnCount">
+           <number>2</number>
+          </property>
+          <column>
+           <property name="text">
+            <string>Test</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>Description</string>
+           </property>
+          </column>
+         </widget>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </item>
+    <item>
+     <layout class="QHBoxLayout" name="bottomButtonLayout">
+      <item>
+       <widget class="QPushButton" name="closeButton">
+        <property name="text">
+         <string>Close</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <spacer name="horizontalSpacer">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item>
+       <widget class="QPushButton" name="runButton">
+        <property name="text">
+         <string>Clean</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>600</width>
+     <height>22</height>
+    </rect>
+   </property>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

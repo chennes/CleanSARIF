@@ -1,0 +1,2 @@
+This app removes unwanted results from a SARIF-formatted static analysis file in
+preparation for loading into an IDE.
