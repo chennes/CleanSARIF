@@ -35,12 +35,72 @@
 #include <filesystem>
 
 
-Cleaner::Cleaner(const std::string& infile, const std::string& outfile)
+Cleaner::Cleaner(const QString& infile, const QString& outfile) :
+	_infile(infile),
+	_outfile(outfile),
+	_sarif(infile.toStdString())
 {
-	_infile = infile;
-	_outfile = outfile;
 }
 
+std::vector<std::tuple<QString, QString>> Cleaner::Rules() const
+{
+	auto internalRules = _sarif.Rules();
+	std::vector<std::tuple<QString, QString>> rules;
+	for (const auto& r : internalRules) {
+		rules.emplace_back(std::make_tuple(QString::fromStdString(std::get<0>(r)), QString::fromStdString(std::get<1>(r))));
+	}
+	return rules;
+}
+
+QString Cleaner::GetBase() const
+{
+	return QString::fromStdString(_sarif.GetBase());
+}
+
+void Cleaner::SetBase(const QString& newBase)
+{
+	_sarif.SetBase(newBase.toStdString());
+}
+
+int Cleaner::SuppressRule(const QString& ruleID)
+{
+	return _sarif.SuppressRule(ruleID.toStdString());
+}
+
+void Cleaner::UnsuppressRule(const QString& ruleID)
+{
+	_sarif.UnsuppressRule(ruleID.toStdString());
+}
+
+QStringList Cleaner::SuppressedRules() const
+{
+	QStringList rules;
+	auto internalRules = _sarif.SuppressedRules();
+	for (const auto& rule : internalRules) {
+		rules.append(QString::fromStdString(rule));
+	}
+	return rules;
+}
+
+int Cleaner::AddLocationFilter(const QString& regex)
+{
+	return _sarif.AddLocationFilter(regex.toStdString());
+}
+
+void Cleaner::RemoveLocationFilter(const QString& regex)
+{
+	_sarif.RemoveLocationFilter(regex.toStdString());
+}
+
+QStringList Cleaner::LocationFilters() const
+{
+	QStringList filters;
+	auto internalFilters = _sarif.LocationFilters();
+	for (const auto& filter : internalFilters) {
+		filters.append(QString::fromStdString(filter));
+	}
+	return filters;
+}
 
 void Cleaner::run()
 {
@@ -48,18 +108,26 @@ void Cleaner::run()
 	if (_infile == _outfile) {
 		// Make a backup:
 		try {
-			std::filesystem::copy(_infile, _infile + ".backup");
+			std::filesystem::copy(_infile.toStdString(), _infile.toStdString() + ".backup");
 		}
 		catch (...) {
-			emit errorOccurred(std::string("Could not make a backup of ") + _infile);
+			emit errorOccurred(QString::fromLatin1("Could not make a backup of ") + _infile);
 			exit(-1);
 			return;
 		}
 	}
 
-	std::ifstream is(_infile);
-	if (!is.good()) {
-		emit errorOccurred(std::string("Could not open file ") + _infile + " for reading.");
+
+	try {
+		_sarif.Export(_outfile.toStdString());
+	}
+	catch (const std::exception& e) {
+		emit errorOccurred(e.what());
+		exit(-1);
+		return;
+	}
+	catch (...) {
+		emit errorOccurred(QString::fromLatin1("Failed to export to ") + _outfile);
 		exit(-1);
 		return;
 	}

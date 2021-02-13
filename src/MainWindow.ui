@@ -115,7 +115,7 @@
         <item>
          <widget class="QTableWidget" name="fileFiltersTable">
           <property name="columnCount">
-           <number>2</number>
+           <number>3</number>
           </property>
           <column>
            <property name="text">
@@ -125,6 +125,11 @@
           <column>
            <property name="text">
             <string>Matches</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>Note</string>
            </property>
           </column>
          </widget>
@@ -152,14 +157,14 @@
       <item>
        <layout class="QVBoxLayout" name="settingsRight">
         <item>
-         <widget class="QLabel" name="includedQueriesLabel">
+         <widget class="QLabel" name="suppressedRulesLabel">
           <property name="text">
-           <string>Included queries</string>
+           <string>Suppressed rules</string>
           </property>
          </widget>
         </item>
         <item>
-         <widget class="QTableWidget" name="queriesTable">
+         <widget class="QTableWidget" name="suppressedRulesTable">
           <property name="sortingEnabled">
            <bool>false</bool>
           </property>
@@ -168,15 +173,33 @@
           </property>
           <column>
            <property name="text">
-            <string>Test</string>
+            <string>Rule ID</string>
            </property>
           </column>
           <column>
            <property name="text">
-            <string>Description</string>
+            <string>Note</string>
            </property>
           </column>
          </widget>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout_3">
+          <item>
+           <widget class="QPushButton" name="removeRuleButton">
+            <property name="text">
+             <string>Remove</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="newRuleButton">
+            <property name="text">
+             <string>New...</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
         </item>
        </layout>
       </item>

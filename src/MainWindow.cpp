@@ -149,8 +149,8 @@ void MainWindow::disableForNoInput()
 	ui->basePathLineEdit->setDisabled(true);
 	ui->fileFiltersLabel->setDisabled(true);
 	ui->fileFiltersTable->setDisabled(true);
-	ui->includedQueriesLabel->setDisabled(true);
-	ui->queriesTable->setDisabled(true);
+	ui->suppressedRulesLabel->setDisabled(true);
+	ui->suppressedRulesTable->setDisabled(true);
 	ui->removeButton->setDisabled(true);
 	ui->newButton->setDisabled(true);
 	ui->runButton->setDisabled(true);
@@ -163,8 +163,8 @@ void MainWindow::enableForInput()
 	ui->basePathLineEdit->setEnabled(true);
 	ui->fileFiltersLabel->setEnabled(true);
 	ui->fileFiltersTable->setEnabled(true);
-	ui->includedQueriesLabel->setEnabled(true);
-	ui->queriesTable->setEnabled(true);
+	ui->suppressedRulesLabel->setEnabled(true);
+	ui->suppressedRulesTable->setEnabled(true);
 	ui->removeButton->setEnabled(true);
 	ui->newButton->setEnabled(true);
 	ui->runButton->setEnabled(true);

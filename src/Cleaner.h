@@ -27,6 +27,8 @@
 #include <QThread>
 #include <QException>
 
+#include "SARIF.h"
+
 class QString;
 
 /**
@@ -45,19 +47,74 @@ class Cleaner : public QThread {
 public:
 
 	/**
-		* \brief Construct a Cleaner that reads from \a infile and writes to \a outfile. 
-		* 
-		* \param infile Must be a readable file, and is expected to be a SARIF JSON-formatted file.
-		* \param outfile Must be writable, and can be the same as \a infile. If it is the same, a
-		* backup file is automatically created. \a outfile will only be created in the event of complete
-		* success. Any failures in processing prevent it from being created, or from overwriting
-		* \a infile if that was what was requested.
-		*/
-	Cleaner(const std::string& infile, const std::string& outfile);
+	 * \brief Construct a Cleaner that reads from \a infile and writes to \a outfile. 
+	 * 
+	 * \param infile Must be a readable file, and is expected to be a SARIF JSON-formatted file.
+	 * \param outfile Must be writable, and can be the same as \a infile. If it is the same, a
+	 * backup file is automatically created. \a outfile will only be created in the event of complete
+	 * success. Any failures in processing prevent it from being created, or from overwriting
+	 * \a infile if that was what was requested.
+	 */
+	Cleaner(const QString& infile, const QString& outfile);
 		
 	~Cleaner() = default;
 		
-	
+
+	/**
+	 * \brief List the rules present in this SARIF object
+	 * \returns a tuple containing the ID of the rule, and its help text
+	 */
+	std::vector<std::tuple<QString, QString>> Rules() const;
+
+	/**
+	 * \brief Get the part of the artifactLocation that all results have in common
+	 */
+	QString GetBase() const;
+
+	/**
+	 * \brief Modify the artifactLocation in the SARIF results to be "rebased" on a new location
+	 * \param newBase the new location
+	 * \see GetBase()
+	 */
+	void SetBase(const QString& newBase);
+
+	/**
+	 * \brief When outputting this object, don't include rule \s ruleID
+	 * \param ruleID The ID of the rule to suppress
+	 * \returns The number of results that this filter will remove (independent for each rule)
+	 */
+	int SuppressRule(const QString& ruleID);
+
+	/**
+	 * \brief Remove suppression of a rule
+	 * \param ruleID The ID of the rule to unsuppress
+	 * \see SuppressRule()
+	 */
+	void UnsuppressRule(const QString& ruleID);
+
+	/**
+	 * \brief Get a list of the currently-suppressed rules
+	 */
+	QStringList SuppressedRules() const;
+
+	/**
+	 * \brief Suppress the output of results whose artifactLocation matches a regular expression
+	 * \param regex The regular expression to apply to the artifactLocation
+	 * \returns The number of results this filter will remove (independent of any other filter)
+	 */
+	int AddLocationFilter(const QString& regex);
+
+	/**
+	 * \brief Stop suppression of results matching a given regex
+	 * \param regex The regular expression to remove from the suppression list
+	 * \see AddLocationFilter()
+	 */
+	void RemoveLocationFilter(const QString& regex);
+
+	/**
+	 * \brief Get the list of currently-active location filters
+	 */
+	QStringList LocationFilters() const;
 
 	/**
 		* \brief This function is generally not called directly, but is run on its own thread by calling
@@ -76,13 +133,14 @@ signals:
 		* \brief Signals failure of the run.
 		* \param message A text message describing the failure.
 		*/
-	void errorOccurred(const std::string &message);
+	void errorOccurred(const QString &message);
 
 private:
 
+	QString _infile;
+	QString _outfile;
 
-	std::string _infile;
-	std::string _outfile;
+	SARIF _sarif;
 };
 
 #endif // _CLEANSARIF_CLEANER_H_
