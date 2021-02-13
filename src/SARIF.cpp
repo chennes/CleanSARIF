@@ -72,24 +72,74 @@ SARIF::SARIF(const std::string& file)
 
 void SARIF::Export(const std::string& file) const
 {
-	QJsonDocument filteredJSONDoc(_json); // Makes a copy
+	// Pre-compile the regular expressions
+	std::vector<std::regex> compiledRegexes;
+	for (const auto &regex : _locationFilters) {
+		compiledRegexes.emplace_back(regex);
+	}
 
-	// Make our changes to the new copy
-	auto o = filteredJSONDoc.object();
-	if (o.contains("runs") && o["runs"].isArray()) {
-		auto runs = o["runs"].toArray().first().toObject();
-		if (runs.contains("results") && runs["results"].isArray()) {
-			auto resultArray = runs["results"].toArray();
-			for (auto result = resultArray.begin(); result != resultArray.end(); ++result) {
+	auto o = _json.object();
+	QJsonObject outputObject;
+	for (auto& element = o.begin(); element != o.end(); ++element) {
+		if (element.key() != QString::fromLatin1("runs")) {
+			outputObject.insert(element.key(), element.value());
+		}
+		else {
+			if (!element->isArray())
+				throw std::exception("runs element is not an array");
+			auto oldRunsArray = element->toArray();
+			
+			QJsonArray newRunsArray;
+			for (auto& run = oldRunsArray.begin(); run != oldRunsArray.end(); ++run) {
+				auto runObject = run->toObject();
+				QJsonObject newRunObject;
+				for (auto& runComponent = runObject.begin(); runComponent != runObject.end(); ++runComponent) {
+					if (runComponent.key() != "results") {
+						newRunObject.insert(runComponent.key(), runComponent.value());
+					}
+					else {
+						if (!runComponent->isArray())
+							throw std::exception("results element is not an array");
+						QJsonArray oldResultsArray = runComponent->toArray();
+						QJsonArray filteredResultsArray;
+						for (auto& result = oldResultsArray.begin(); result != oldResultsArray.end(); ++result) {
+
+							bool required = true;
+
+							// Filter based on the rule
+							auto rule = SARIF::GetRule(result->toObject());
+							if (std::find(_suppressedRules.begin(), _suppressedRules.end(), rule) != _suppressedRules.end()) {
+								required = false;
+							}
+
+							// Filter based on the filename
+							auto uri = SARIF::GetArtifactUri(result->toObject());
+							for (const auto& re : compiledRegexes) {
+								if (std::regex_search(uri, re)) {
+									required = false;
+									break;
+								}
+							}
+
+							if (required) {
+								filteredResultsArray.push_back(*result);
+							}
+						}
+						newRunObject.insert("results", filteredResultsArray);
+					}
+				}
+				newRunsArray.append(newRunObject);
 			}
+			outputObject.insert("runs", newRunsArray);
 		}
 	}
+	QJsonDocument filteredJSONDoc(outputObject);
 
 	// Write out the copy
 	QFile newFile(QString::fromStdString(file));
 	newFile.open(QIODevice::OpenModeFlag::Truncate | QIODevice::OpenModeFlag::WriteOnly);
 	if (newFile.isOpen())
-		newFile.write(filteredJSONDoc.toBinaryData());
+		newFile.write(filteredJSONDoc.toJson());
 	else
 		throw std::exception("Could not open requested file for writing");
 }
@@ -201,6 +251,16 @@ void SARIF::RemoveLocationFilter(const std::string& regex)
 std::vector<std::string> SARIF::LocationFilters() const
 {
 	return _locationFilters;
+}
+
+bool SARIF::operator==(const SARIF& rhs) const
+{
+	return _json == rhs._json;
+}
+
+bool SARIF::operator!=(const SARIF& rhs) const
+{
+	return !(*this == rhs);
 }
 
 std::string SARIF::GetArtifactUri(const QJsonObject& result)

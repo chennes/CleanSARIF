@@ -102,6 +102,13 @@ public:
 	 */
 	std::vector<std::string> LocationFilters() const;
 
+	/** 
+	 * \brief Deep comparison operator: only true if both objects contain exactly the same JSON structure (whitespace is not counted)
+	 */
+	bool operator==(const SARIF& rhs) const;
+
+	bool operator!=(const SARIF& rhs) const;
+
 private:
 	QJsonDocument _json;
 

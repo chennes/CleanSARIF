@@ -34,6 +34,9 @@ set(TEST_AUX
   NotJSON.sarif
   NoSchema.sarif
   NotSARIF.sarif
+  SmallValidA.sarif
+  SmallValidAPlusWhitespace.sarif
+  SmallValidB.sarif
 )
 
 add_executable(tests ${TEST_SRCS} ${APP_SRCS})

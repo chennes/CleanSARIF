@@ -154,6 +154,73 @@ TEST_CASE("Export creates file", "[sarif]") {
 
 TEST_CASE("Export reports failure to open file", "[sarif]") {
 	auto sarif = SARIF("PVS-freecad-23754_210125.sarif");
-
 	REQUIRE_THROWS(sarif.Export("/you/probably/cant/write/to/this/file.sarif"));
+}
+
+TEST_CASE("Export can be imported", "[sarif]") {
+	auto sarif = SARIF("PVS-freecad-23754_210125.sarif");
+	QTemporaryFile tempFile;
+	tempFile.open();
+	std::string filename = tempFile.fileName().toStdString() + ".sarif";
+	tempFile.close();
+	sarif.Export(filename);
+	REQUIRE_NOTHROW(SARIF(filename));
+	QFile::remove(QString::fromStdString(filename));
+}
+
+TEST_CASE("Test equality comparison operator", "[sarif]") {
+	auto sarifA = SARIF("SmallValidA.sarif");
+	auto sarifAPlusWhitespace = SARIF("SmallValidAPlusWhitespace.sarif");
+	auto sarifB = SARIF("SmallValidB.sarif");
+
+	REQUIRE(sarifA == sarifA);
+	REQUIRE(sarifA == sarifAPlusWhitespace);
+	REQUIRE(sarifA != sarifB);
+}
+
+TEST_CASE("Import-export-import yields the same result", "[sarif]") {
+	auto sarif = SARIF("PVS-freecad-23754_210125.sarif");
+	QTemporaryFile tempFile;
+	tempFile.open();
+	std::string filename = tempFile.fileName().toStdString() + ".sarif";
+	tempFile.close();
+	sarif.Export(filename);
+	std::unique_ptr<SARIF> sarif2;
+	REQUIRE_NOTHROW(sarif2 = std::make_unique<SARIF>(filename));
+	QFile::remove(QString::fromStdString(filename));
+	REQUIRE(sarif == *sarif2);
+}
+
+TEST_CASE("Exported file removes filtered rules", "[sarif]") {
+	auto sarif = SARIF("PVS-freecad-23754_210125.sarif");
+	const std::string ruleToSuppress = "V008";
+	auto suppressionCount = sarif.SuppressRule(ruleToSuppress);
+	QTemporaryFile tempFile;
+	tempFile.open();
+	std::string filename = tempFile.fileName().toStdString() + ".sarif";
+	tempFile.close();
+	sarif.Export(filename);
+	auto sarif2 = SARIF(filename);
+	QFile::remove(QString::fromStdString(filename));
+	REQUIRE(sarif != sarif2);
+
+	auto suppressionCount2 = sarif2.SuppressRule(ruleToSuppress);
+	REQUIRE(suppressionCount2 == 0);
+}
+
+TEST_CASE("Exported file removes filtered files", "[sarif]") {
+	const std::string regexForSuppression("^.*Mod/Draft/.*\\.cpp$");
+	auto sarif = SARIF("PVS-freecad-23754_210125.sarif");
+	int suppressionCount = sarif.AddLocationFilter(regexForSuppression);
+	QTemporaryFile tempFile;
+	tempFile.open();
+	std::string filename = tempFile.fileName().toStdString() + ".sarif";
+	tempFile.close();
+	sarif.Export(filename);
+	auto sarif2 = SARIF(filename);
+	QFile::remove(QString::fromStdString(filename));
+	REQUIRE(sarif != sarif2);
+
+	auto suppressionCount2 = sarif2.AddLocationFilter(regexForSuppression);
+	REQUIRE(suppressionCount2 == 0);
 }
