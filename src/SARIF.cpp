@@ -121,6 +121,11 @@ void SARIF::Export(const std::string& file) const
 								}
 							}
 
+							// Change the base uri
+							if (_overrideBase) {
+								SARIF::ReplaceUri(_originalBasePath, _overrideBaseWith, *result);
+							}
+
 							if (required) {
 								filteredResultsArray.push_back(*result);
 							}
@@ -288,6 +293,39 @@ std::string SARIF::MaxMatch(const std::string& a, const std::string& b)
 	while (location < a.size() && location < b.size() && a[location] == b[location])
 		++location;
 	return a.substr(0,location);
+}
+
+void SARIF::ReplaceUri(const std::string& lookFor, const std::string& replaceWith, QJsonValueRef in)
+{
+	if (in.isArray()) {
+		QJsonArray replacementArray;
+		auto oldArray = in.toArray(); // Makes a copy
+		for (auto& element = oldArray.begin(); element != oldArray.end(); ++element) {
+			SARIF::ReplaceUri(lookFor, replaceWith, *element);
+			replacementArray.append(*element);
+		}
+		in = replacementArray;
+	} 
+	else if (in.isObject()) {
+		QJsonObject replacementObject;
+		auto oldObject = in.toObject(); // Makes a copy
+		for (auto& element = oldObject.begin(); element != oldObject.end(); ++element) {
+			if (element->isString()) {
+				auto oldValue = element.value().toString().toStdString();
+				if (element.key() == "uri" && SARIF::MaxMatch(oldValue, lookFor) == lookFor) {
+					element.value() = QString::fromStdString(oldValue.replace(0, lookFor.length(), replaceWith));
+				}
+			}
+			else {
+				SARIF::ReplaceUri(lookFor, replaceWith, *element);
+			}
+			replacementObject.insert(element.key(), element.value());
+		}
+		in = replacementObject;
+	}
+	else {
+		// Nothing needs to be done for the other types
+	}
 }
 
 std::string SARIF::GetRule(const QJsonObject& result)

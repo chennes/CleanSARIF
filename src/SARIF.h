@@ -135,6 +135,15 @@ private:
 	static std::string MaxMatch(const std::string &a, const std::string &b);
 
 	/**
+	 * \brief Recursively search through a JSON structure looking for elements whose key contains the string "uri" and replace
+	 * occurrences of \a lookingFor \a with \replaceWith at the beginning of the value.
+	 * \param lookFor The beginning of the path that is being replaced
+	 * \param replaceWith What to replace it with
+	 * \param in A reference to the JSON value to be modified
+	 */
+	static void ReplaceUri(const std::string& lookFor, const std::string& replaceWith, QJsonValueRef in);
+
+	/**
 	 * \brief Given a single result, return what rule it represents
 	 * \param result - A JSON-formatted object that conforms to the SARIF schema for a single item in the result array.
 	 */

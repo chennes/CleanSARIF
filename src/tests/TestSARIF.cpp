@@ -224,3 +224,22 @@ TEST_CASE("Exported file removes filtered files", "[sarif]") {
 	auto suppressionCount2 = sarif2.AddLocationFilter(regexForSuppression);
 	REQUIRE(suppressionCount2 == 0);
 }
+
+TEST_CASE("Exported file updates base", "[sarif]") {
+	auto sarif = SARIF("PVS-freecad-23754_210125.sarif");
+	auto oldBase = sarif.GetBase();
+	auto newBase = oldBase + "changed/";
+	sarif.SetBase(newBase);
+
+	QTemporaryFile tempFile;
+	tempFile.open();
+	std::string filename = tempFile.fileName().toStdString() + ".sarif";
+	tempFile.close();
+	sarif.Export(filename);
+	auto sarif2 = SARIF(filename);
+	QFile::remove(QString::fromStdString(filename));
+	REQUIRE(sarif != sarif2);
+
+	auto importedBase = sarif.GetBase();
+	REQUIRE(importedBase == newBase);
+}
