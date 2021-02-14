@@ -34,6 +34,9 @@
 #include <QDragEnterEvent>
 #include <QDropEvent>
 #include <QMimeData>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QJsonArray>
 #include "QProgressIndicator.h"
 #pragma warning(pop) 
 
@@ -43,6 +46,7 @@
 #include "LoadingSARIF.h"
 
 #include <iostream>
+#include <regex>
 
 #if __cplusplus >= 202000L
 #include <format>
@@ -208,15 +212,6 @@ void MainWindow::on_newRuleButton_clicked()
 		++row;
 	}
 }
-
-void MainWindow::on_saveFiltersButton_clicked()
-{
-}
-
-void MainWindow::on_loadFiltersButton_clicked()
-{
-}
-
 void MainWindow::on_cleanButton_clicked()
 {
 	ui->cleanButton->setDisabled(true);
@@ -320,11 +315,6 @@ void MainWindow::cleanComplete(const QString& filename)
 
 }
 
-void MainWindow::cancelOperation()
-{
-	_cleaner->requestInterruption();
-}
-
 void MainWindow::disableForNoInput()
 {
 	ui->cleanButton->setDefault(false);
@@ -400,3 +390,133 @@ void MainWindow::dropEvent(QDropEvent* event)
 	createDefaultOutfileName();
 	event->acceptProposedAction();
 }
+
+
+
+// ---------------------- Loading and Saving Filter Data ---------------------- //
+
+void MainWindow::on_saveFiltersButton_clicked()
+{
+	auto filename = QFileDialog::getSaveFileName(this, tr("Save filters as..."), _lastSavedDirectory, "JSON (*.json)");
+	if (!filename.isEmpty()) {
+		QJsonObject jsonBase;
+		jsonBase.insert("application", QApplication::applicationName());
+		jsonBase.insert("applicationVersion", ui->versionLabel->text());
+		jsonBase.insert("fileFormatMajorVersion", "1");
+		jsonBase.insert("fileFormatMinorVersion", "0");
+		QJsonObject data;
+
+		// Base path
+		data.insert("basePath", ui->basePathLineEdit->text());
+
+		// Rule filters
+		QJsonArray ruleFilters;
+		for (int row = 0; row < ui->suppressedRulesTable->rowCount(); ++row) {
+			QJsonObject filter;
+			filter.insert("rule", ui->suppressedRulesTable->item(row, 0)->text());
+			filter.insert("note", ui->suppressedRulesTable->item(row, 1)->text());
+			ruleFilters.append(filter);
+		}
+		data.insert("ruleFilters", ruleFilters);
+
+		// File filters
+		QJsonArray fileFilters;
+		for (int row = 0; row < ui->fileFiltersTable->rowCount(); ++row) {
+			QJsonObject filter;
+			filter.insert("regex", ui->fileFiltersTable->item(row, 0)->text());
+			// Omit the match count, it's not part of the save data
+			filter.insert("note", ui->fileFiltersTable->item(row, 2)->text());
+			fileFilters.append(filter);
+		}
+		data.insert("fileFilters", fileFilters);
+
+		jsonBase.insert("xdata", data);
+
+		QJsonDocument doc(jsonBase);
+
+		QFile outfile(filename);
+		if (!outfile.open(QIODevice::WriteOnly | QIODevice::Text)) {
+			QMessageBox::critical(this, tr("Save failed"), tr("Failed to create the file:\n") + filename, QMessageBox::Close);
+			return;
+		}
+		outfile.write(doc.toJson());
+		outfile.close();
+	}
+}
+
+void MainWindow::on_loadFiltersButton_clicked()
+{
+	auto filename = QFileDialog::getOpenFileName(this, tr("Choose filter file..."), _lastOpenedDirectory, "JSON (*.json)");
+	if (!filename.isEmpty()) {
+		QFile infile(filename);
+		if (!infile.open(QIODevice::ReadOnly | QIODevice::Text)) {
+			QMessageBox::critical(this, tr("Load failed"), tr("Failed to open the file:\n") + filename, QMessageBox::Close);
+			return;
+		}
+		auto doc = QJsonDocument::fromJson(infile.readAll());;
+
+		if (!doc.object().contains("fileFormatMajorVersion")) {
+			QMessageBox::critical(this, tr("Load failed"), tr("Unrecognized file format:\n") + filename, QMessageBox::Close);
+			return;
+		}
+		auto version = doc.object()["fileFormatMajorVersion"].toString();
+		if (version == "1") {
+			loadVersion1(doc);
+		}
+		else {
+			QMessageBox::critical(this, tr("Load failed"), tr("The current software cannot read file format version ") + version, QMessageBox::Close);
+			return;
+		}
+
+	}
+}
+
+void MainWindow::loadVersion1(const QJsonDocument& doc)
+{
+	QJsonObject data = doc.object()["xdata"].toObject();
+
+	QString basePath = data["basePath"].toString();
+	ui->basePathLineEdit->setText(basePath);
+
+	QJsonArray ruleFilters = data["ruleFilters"].toArray();
+	int row = 0;
+	ui->suppressedRulesTable->setRowCount(ruleFilters.count());
+	for (const auto& rule : ruleFilters) {
+		QString ruleText = rule.toObject()["rule"].toString();
+		QString ruleNote = rule.toObject()["note"].toString();
+
+		QTableWidgetItem* name = new QTableWidgetItem(ruleText);
+		QTableWidgetItem* note = new QTableWidgetItem(ruleNote);
+		ui->suppressedRulesTable->setItem(row, 0, name);
+		ui->suppressedRulesTable->setItem(row, 1, note);
+		++row;
+	}
+
+	QJsonArray fileFilters = data["fileFilters"].toArray();
+	row = 0;
+	ui->fileFiltersTable->setRowCount(fileFilters.count());
+	auto currentFileList = _cleaner->GetFiles();
+	for (const auto& rule : fileFilters) {
+		QString regexText = rule.toObject()["regex"].toString();
+		QString regexNote = rule.toObject()["note"].toString();
+
+		// Figure out how many hits we have in the current data set against this loaded filter:
+		std::regex compiledRegex(regexText.toStdString());
+		int matches = 0;
+		for (const auto& file : currentFileList) {
+			if (std::regex_search(file.toStdString(), compiledRegex)) {
+				++matches;
+			}
+		}
+
+		QTableWidgetItem* regex = new QTableWidgetItem(regexText);
+		QTableWidgetItem* note = new QTableWidgetItem(regexNote);
+		QTableWidgetItem* count = new QTableWidgetItem();
+		count->setData(Qt::EditRole, matches); // Retain as integer for sorting
+		ui->fileFiltersTable->setItem(row, 0, regex);
+		ui->fileFiltersTable->setItem(row, 1, count);
+		ui->fileFiltersTable->setItem(row, 2, note);
+		++row;
+	}
+}
+

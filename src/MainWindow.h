@@ -76,6 +76,8 @@ protected:
 	void dragEnterEvent(QDragEnterEvent* event) override;
 	void dropEvent(QDropEvent* event) override;
 
+	void loadVersion1(const QJsonDocument& doc);
+
 private slots:
 
 	// Auto-connected slots
@@ -97,8 +99,6 @@ private slots:
 	void loadComplete(const QString &filename);
 	void loadFailed(const QString &message);
 	void cleanComplete(const QString& filename);
-
-	void cancelOperation();
 
 private:
 	std::unique_ptr<Ui::MainWindow> ui;
