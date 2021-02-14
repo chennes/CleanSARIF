@@ -55,6 +55,10 @@ public:
 
 	static std::tuple<QString,QString,int> GetNewFileFilter(QWidget* parent, const QStringList &allFiles);
 
+public slots:
+
+	void done(int r) override;
+
 private slots:
 
 	void on_testButton_clicked();

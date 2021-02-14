@@ -66,7 +66,7 @@ MainWindow::MainWindow(QWidget* parent) :
 	std::string version = std::format("v{}.{}.{}", CleanSARIF_VERSION_MAJOR, CleanSARIF_VERSION_MINOR, CleanSARIF_VERSION_PATCH);
 #else
 	std::ostringstream s;
-	s << "v" << CleanSARIF_VERSION_MAJOR << "." << CleanSARIF_VERSION_MINOR << "." << CleanSARIF_VERSION_PATCH << " pre-alpha";
+	s << "v" << CleanSARIF_VERSION_MAJOR << "." << CleanSARIF_VERSION_MINOR << "." << CleanSARIF_VERSION_PATCH << " beta";
 	std::string version = s.str();
 #endif
 	ui->versionLabel->setText(QString::fromStdString(version));
@@ -90,7 +90,7 @@ MainWindow::MainWindow(QWidget* parent) :
 		enableForInput();
 
 	// Calculate a default position:
-	QSize defaultSize(600, 500);
+	QSize defaultSize(800, 700);
 	auto screenSize = qApp->primaryScreen()->size();
 	QPoint upperLeft(screenSize.width() / 2 - defaultSize.width() / 2, screenSize.height() / 2 - defaultSize.height() / 2);
 
@@ -287,6 +287,8 @@ void MainWindow::loadComplete(const QString& filename)
 	QFileInfo fi(filename);
 	_lastOpenedDirectory = fi.path();
 
+	ui->basePathLineEdit->setText(_cleaner->GetBase());
+
 	QSettings settings;
 	settings.beginGroup("Options");
 	settings.setValue("lastOpenedDirectory", _lastOpenedDirectory);
@@ -302,7 +304,7 @@ void MainWindow::loadFailed(const QString& message)
 void MainWindow::cleanComplete(const QString& filename)
 {
 	_loadingDialog.reset();
-	disconnect(_cleaner.get(), &Cleaner::fileLoaded, this, &MainWindow::cleanComplete);
+	disconnect(_cleaner.get(), &Cleaner::fileWritten, this, &MainWindow::cleanComplete);
 	QMessageBox::information(this, tr("Processing complete"), tr("Cleaning complete. Output file in:\n") + filename, QMessageBox::Close);
 
 	QFileInfo fi(filename);

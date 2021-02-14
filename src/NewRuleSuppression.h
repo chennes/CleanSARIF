@@ -52,6 +52,10 @@ public:
 
 	static std::tuple<QStringList, QString> GetNewRuleSuppression(QWidget* parent, const std::vector<std::tuple<QString, int>>& ruleList);
 
+public slots:
+
+	void done(int r) override;
+
 private:
 	std::unique_ptr<Ui::NewRuleSuppression> ui;
 };

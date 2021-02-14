@@ -25,6 +25,9 @@
 #pragma warning(push, 1) 
 #include "ui_NewFileFilter.h"
 #include <QMessageBox>
+#include <QSettings>
+#include <QApplication>
+#include <QScreen>
 #pragma warning(pop)
 
 #include <regex>
@@ -34,6 +37,15 @@ NewFileFilter::NewFileFilter(QWidget* parent) :
 	ui(new Ui::NewFileFilter)
 {
 	ui->setupUi(this);
+
+	QSize defaultSize(600, 500);
+	auto screenSize = qApp->primaryScreen()->size();
+	QPoint upperLeft(screenSize.width() / 2 - defaultSize.width() / 2, screenSize.height() / 2 - defaultSize.height() / 2);
+	QSettings settings;
+	settings.beginGroup("NewFileFilter");
+	resize(settings.value("size", defaultSize).toSize());
+	move(settings.value("pos", upperLeft).toPoint());
+	settings.endGroup();
 }
 
 void NewFileFilter::SetFiles(const QStringList& allFiles)
@@ -107,4 +119,17 @@ std::tuple<QString, QString, int> NewFileFilter::GetNewFileFilter(QWidget* paren
 	else {
 		return std::make_tuple(QString(), QString(), 0);
 	}
+}
+
+
+void NewFileFilter::done(int r)
+{
+	QSettings settings;
+	settings.beginGroup("NewFileFilter");
+	settings.setValue("size", size());
+	settings.setValue("pos", pos());
+	settings.endGroup();
+	settings.sync();
+
+	QDialog::done(r);
 }

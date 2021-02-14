@@ -24,6 +24,9 @@
 
 #pragma warning(push, 1) 
 #include "ui_NewRuleSuppression.h"
+#include <QSettings>
+#include <QApplication>
+#include <QScreen>
 #pragma warning(pop)
 
 NewRuleSuppression::NewRuleSuppression(QWidget* parent) : 
@@ -31,6 +34,16 @@ NewRuleSuppression::NewRuleSuppression(QWidget* parent) :
 	ui(new Ui::NewRuleSuppression)
 {
 	ui->setupUi(this);
+
+	QSize defaultSize(600, 500);
+	auto screenSize = qApp->primaryScreen()->size();
+	QPoint upperLeft(screenSize.width() / 2 - defaultSize.width() / 2, screenSize.height() / 2 - defaultSize.height() / 2);
+	QSettings settings;
+	settings.beginGroup("NewRuleSuppression");
+	resize(settings.value("size", defaultSize).toSize());
+	move(settings.value("pos", upperLeft).toPoint());
+	settings.endGroup();
+
 }
 
 void NewRuleSuppression::SetRulesList(const std::vector<std::tuple<QString, int>>& ruleList)
@@ -78,4 +91,16 @@ std::tuple<QStringList, QString> NewRuleSuppression::GetNewRuleSuppression(QWidg
 	else {
 		return std::tuple<QStringList, QString>();
 	}
+}
+
+void NewRuleSuppression::done(int r)
+{
+	QSettings settings;
+	settings.beginGroup("NewRuleSuppression");
+	settings.setValue("size", size());
+	settings.setValue("pos", pos());
+	settings.endGroup();
+	settings.sync();
+
+	QDialog::done(r);
 }
