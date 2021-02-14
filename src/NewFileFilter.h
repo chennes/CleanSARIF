@@ -23,7 +23,7 @@
 #ifndef _CLEANSARIF_NEWFILEFILTER_H_
 #define _CLEANSARIF_NEWFILEFILTER_H_
 
-#pragma warning(push, 3) 
+#pragma warning(push, 1) 
 #include <QDialog>
 #pragma warning(pop) 
 
@@ -45,8 +45,23 @@ public:
 	explicit NewFileFilter(QWidget* parent);
 	~NewFileFilter() = default;
 
+	void SetFiles(const QStringList& allFiles);
+
+	QString GetFilter() const;
+
+	QString GetNote() const;
+
+	int GetNumberOfMatches() const;
+
+	static std::tuple<QString,QString,int> GetNewFileFilter(QWidget* parent, const QStringList &allFiles);
+
+private slots:
+
+	void on_testButton_clicked();
+
 private:
 	std::unique_ptr<Ui::NewFileFilter> ui;
+	QStringList _allFiles;
 };
 
 

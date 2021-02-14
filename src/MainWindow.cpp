@@ -66,8 +66,13 @@ MainWindow::MainWindow(QWidget* parent) :
 	std::string version = s.str();
 #endif
 	ui->versionLabel->setText(QString::fromStdString(version));
+	ui->fileFiltersTable->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+	ui->suppressedRulesTable->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
 
-	QSettings settings;
+	connect(ui->fileFiltersTable, &QTableWidget::itemSelectionChanged, this, &MainWindow::fileFilterSelectionChanged);
+	connect(ui->suppressedRulesTable, &QTableWidget::itemSelectionChanged, this, &MainWindow::ruleSuppressionSelectionChanged);
+
+	QSettings settings; 
 
 	settings.beginGroup("Options");
 	ui->inputFileLineEdit->setText(settings.value("inputFile", "").toString());
@@ -128,14 +133,55 @@ void MainWindow::on_browseBasePathButton_clicked()
 
 void MainWindow::on_removeFileFilterButton_clicked()
 {
+	auto ranges = ui->fileFiltersTable->selectedRanges();
+	std::vector<int> rowsToRemove;
+	for (const auto & range : ranges) {
+		int start = range.topRow();
+		int end = range.bottomRow();
+		for (int row = start; row <= end; ++row) {
+			rowsToRemove.push_back(row);
+		}
+	}
+	std::sort(rowsToRemove.begin(), rowsToRemove.end(), std::greater<int>());
+	for (auto row : rowsToRemove) {
+		ui->fileFiltersTable->removeRow(row);
+	}
 }
 
 void MainWindow::on_newFileFilterButton_clicked()
 {
+	auto filesToFilter = NewFileFilter::GetNewFileFilter(this, _cleaner->GetFiles());
+	
+	if (std::get<0>(filesToFilter).isEmpty())
+		return;
+
+	const int row = ui->fileFiltersTable->rowCount();
+	ui->fileFiltersTable->setRowCount(row + 1);
+
+	QTableWidgetItem* filter = new QTableWidgetItem(std::get<0>(filesToFilter));
+	QTableWidgetItem* note = new QTableWidgetItem(std::get<1>(filesToFilter));
+	QTableWidgetItem* count = new QTableWidgetItem();
+	count->setData(Qt::EditRole, std::get<2>(filesToFilter)); // Retain as integer for sorting
+	ui->fileFiltersTable->setItem(row, 0, filter);
+	ui->fileFiltersTable->setItem(row, 1, count);
+	ui->fileFiltersTable->setItem(row, 2, note);
 }
 
 void MainWindow::on_removeRuleButton_clicked()
 {
+	auto ranges = ui->suppressedRulesTable->selectedRanges();
+	std::vector<int> rowsToRemove;
+	for (const auto& range : ranges) {
+		int start = range.topRow();
+		int end = range.bottomRow();
+		for (int row = start; row <= end; ++row) {
+			rowsToRemove.push_back(row);
+		}
+	}
+	std::sort(rowsToRemove.begin(), rowsToRemove.end(), std::greater<int>());
+	for (auto row : rowsToRemove) {
+		ui->suppressedRulesTable->removeRow(row);
+	}
 }
 
 void MainWindow::on_newRuleButton_clicked()
@@ -185,6 +231,28 @@ void MainWindow::on_closeButton_clicked()
 	settings.endGroup();
 	settings.sync();
 	QApplication::quit();
+}
+
+void MainWindow::fileFilterSelectionChanged()
+{
+	auto count = ui->fileFiltersTable->selectedRanges().count();
+	if (count > 0) {
+		ui->removeFileFilterButton->setEnabled(true);
+	}
+	else {
+		ui->removeFileFilterButton->setEnabled(false);
+	}
+}
+
+void MainWindow::ruleSuppressionSelectionChanged()
+{
+	auto count = ui->suppressedRulesTable->selectedRanges().count();
+	if (count > 0) {
+		ui->removeRuleButton->setEnabled(true);
+	}
+	else {
+		ui->removeRuleButton->setEnabled(false);
+	}
 }
 
 void MainWindow::handleSuccess()
@@ -246,10 +314,11 @@ void MainWindow::enableForInput()
 	ui->fileFiltersTable->setEnabled(true);
 	ui->suppressedRulesLabel->setEnabled(true);
 	ui->suppressedRulesTable->setEnabled(true);
-	ui->removeRuleButton->setEnabled(true);
+	//ui->removeRuleButton->setEnabled(true); // Enabled on selection
 	ui->newRuleButton->setEnabled(true);
-	ui->removeFileFilterButton->setEnabled(true);
+	//ui->removeFileFilterButton->setEnabled(true); // Enabled on selection
 	ui->newFileFilterButton->setEnabled(true);
+	ui->saveFiltersButton->setEnabled(true);
 	ui->loadFiltersButton->setEnabled(true);
 	ui->cleanButton->setEnabled(true);
 }

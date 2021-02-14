@@ -24,8 +24,10 @@
 #ifndef _CLEANSARIF_CLEANER_H_
 #define _CLEANSARIF_CLEANER_H_
 
+#pragma warning(push, 1) 
 #include <QThread>
 #include <QException>
+#pragma warning(pop)
 
 #include "SARIF.h"
 
@@ -79,6 +81,11 @@ public:
 	 * \returns a tuple containing the ID of the rule and its hits count
 	 */
 	std::vector<std::tuple<QString, int>> GetRules() const;
+
+	/**
+	 * \brief List the analyzed source code files that this SARIF file contains results for
+	 */
+	QStringList GetFiles() const;
 
 	/**
 	 * \brief Get the part of the artifactLocation that all results have in common

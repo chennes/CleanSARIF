@@ -25,10 +25,12 @@
 #include <exception>
 #include <regex>
 
+#pragma warning(push, 1) 
 #include <QFile>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonArray>
+#pragma warning(pop)
 
 SARIF::SARIF(const std::string& file)
 {
@@ -106,6 +108,11 @@ void SARIF::Export(const std::string& file) const
 
 							bool required = true;
 
+							// Change the base uri
+							if (_overrideBase) {
+								SARIF::ReplaceUri(_originalBasePath, _overrideBaseWith, *result);
+							}
+
 							// Filter based on the rule
 							auto rule = SARIF::GetRule(result->toObject());
 							if (std::find(_suppressedRules.begin(), _suppressedRules.end(), rule) != _suppressedRules.end()) {
@@ -119,11 +126,6 @@ void SARIF::Export(const std::string& file) const
 									required = false;
 									break;
 								}
-							}
-
-							// Change the base uri
-							if (_overrideBase) {
-								SARIF::ReplaceUri(_originalBasePath, _overrideBaseWith, *result);
 							}
 
 							if (required) {
@@ -183,6 +185,28 @@ std::vector<std::tuple<std::string, std::string>> SARIF::Rules() const
 		}
 	}
 	return ruleTuples;
+}
+
+std::set<std::string> SARIF::Files() const
+{
+	std::set<std::string> files;
+	auto o = _json.object();
+	if (o.contains("runs") && o["runs"].isArray()) {
+		auto runs = o["runs"].toArray().first().toObject();
+		if (runs.contains("results") && runs["results"].isArray()) {
+			auto resultArray = runs["results"].toArray();
+			for (auto result = resultArray.begin(); result != resultArray.end(); ++result) {
+				auto uri = SARIF::GetArtifactUri(result->toObject());
+				if (_overrideBase && SARIF::MaxMatch(uri, _overrideBaseWith) == _overrideBaseWith) {
+					files.insert(uri.substr(_overrideBaseWith.size()));
+				}
+				else {
+					files.insert(uri);
+				}
+			}
+		}
+	}
+	return files;
 }
 
 std::string SARIF::GetBase() const

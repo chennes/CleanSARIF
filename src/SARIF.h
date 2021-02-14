@@ -22,8 +22,11 @@
 
 #include <string>
 #include <vector>
+#include <set>
 
+#pragma warning(push, 1) 
 #include <QJsonDocument>
+#pragma warning(pop)
 
 class SARIF
 {
@@ -51,6 +54,11 @@ public:
 	 * \returns a tuple containing the ID of the rule, and its help text
 	 */
 	std::vector<std::tuple<std::string, std::string>> Rules() const;
+
+	/**
+	 * \brief List the source code files this SARIF result set affects
+	 */
+	std::set<std::string> Files() const;
 
 	/**
 	 * \brief Get the part of the artifactLocation that all results have in common

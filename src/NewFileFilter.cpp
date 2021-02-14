@@ -24,11 +24,87 @@
 
 #pragma warning(push, 1) 
 #include "ui_NewFileFilter.h"
+#include <QMessageBox>
 #pragma warning(pop)
+
+#include <regex>
 
 NewFileFilter::NewFileFilter(QWidget* parent) :
 	QDialog(parent),
 	ui(new Ui::NewFileFilter)
 {
+	ui->setupUi(this);
+}
 
+void NewFileFilter::SetFiles(const QStringList& allFiles)
+{
+	_allFiles = allFiles;
+	ui->regexLineEdit->setText(".*");
+	on_testButton_clicked();
+}
+
+QString NewFileFilter::GetFilter() const
+{
+	// Make sure it compiles before sending it along:
+	try {
+		std::regex re(ui->regexLineEdit->text().toStdString());
+	}
+	catch (const std::regex_error& e) {
+		return QString::fromStdString(e.what());
+	}
+	return ui->regexLineEdit->text();
+}
+
+QString NewFileFilter::GetNote() const
+{
+	return ui->noteLineEdit->text();
+}
+
+int NewFileFilter::GetNumberOfMatches() const
+{
+	auto regex = ui->regexLineEdit->text().toStdString();
+	try {
+		auto re = std::regex(regex);
+		int matches = 0;
+		for (auto file = _allFiles.begin(); file != _allFiles.end(); ++file) {
+			if (std::regex_search(file->toStdString(), re)) {
+				++matches;
+			}
+		}
+		return matches;
+	}
+	catch (const std::regex_error&) {
+		return 0;
+	}
+}
+
+void NewFileFilter::on_testButton_clicked()
+{
+	ui->resultsList->clear();
+	auto regex = ui->regexLineEdit->text().toStdString();
+	try {
+		auto re = std::regex(regex);
+		for (auto file = _allFiles.begin(); file != _allFiles.end(); ++file) {
+			if (std::regex_search(file->toStdString(), re)) {
+				ui->resultsList->addItem(*file);
+			}
+		}
+		ui->numberOfMatchesLabel->setText(QString::number(ui->resultsList->count()));
+	}
+	catch (const std::regex_error& e) {
+		QMessageBox::critical(this, tr("Invalid Regular Expression"), e.what());
+	}
+}
+
+std::tuple<QString, QString, int> NewFileFilter::GetNewFileFilter(QWidget* parent, const QStringList& allFiles)
+{
+	NewFileFilter dialog(parent);
+	dialog.SetFiles(allFiles);
+	auto result = dialog.exec();
+	if (result == QDialog::Accepted) {
+		return std::make_tuple(dialog.GetFilter(), dialog.GetNote(), dialog.GetNumberOfMatches());
+	}
+	else {
+		return std::make_tuple(QString(), QString(), 0);
+	}
 }

@@ -91,6 +91,9 @@ private slots:
 	void on_cleanButton_clicked();
 	void on_closeButton_clicked();
 
+	void fileFilterSelectionChanged();
+	void ruleSuppressionSelectionChanged();
+
 	void handleSuccess();
 	void handleError(const std::string &message);
 

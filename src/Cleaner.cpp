@@ -22,7 +22,9 @@
 
 #include "Cleaner.h"
 
+#pragma warning(push, 1) 
 #include <QFile>
+#pragma warning(pop)
 
 #include <sstream>
 #include <stdexcept>
@@ -51,6 +53,7 @@ void Cleaner::SetOutfile(const QString& outfile)
 
 std::vector<std::tuple<QString, int>> Cleaner::GetRules() const
 {
+	if (!_sarif) throw std::exception("SARIF data not loaded");
 	auto internalRules = _sarif->GetRules();
 	std::vector<std::tuple<QString, int>> rules;
 	for (const auto& r : internalRules) {
@@ -59,8 +62,20 @@ std::vector<std::tuple<QString, int>> Cleaner::GetRules() const
 	return rules;
 }
 
+QStringList Cleaner::GetFiles() const
+{
+	if (!_sarif) throw std::exception("SARIF data not loaded");
+	QStringList files;
+	auto internalFiles = _sarif->Files();
+	for (const auto& file : internalFiles) {
+		files.append(QString::fromStdString(file));
+	}
+	return files;
+}
+
 QString Cleaner::GetBase() const
 {
+	if (!_sarif) throw std::exception("SARIF data not loaded");
 	return QString::fromStdString(_sarif->GetBase());
 }
 
@@ -71,16 +86,19 @@ void Cleaner::SetBase(const QString& newBase)
 
 int Cleaner::SuppressRule(const QString& ruleID)
 {
+	if (!_sarif) throw std::exception("SARIF data not loaded");
 	return _sarif->SuppressRule(ruleID.toStdString());
 }
 
 void Cleaner::UnsuppressRule(const QString& ruleID)
 {
+	if (!_sarif) throw std::exception("SARIF data not loaded");
 	_sarif->UnsuppressRule(ruleID.toStdString());
 }
 
 QStringList Cleaner::SuppressedRules() const
 {
+	if (!_sarif) throw std::exception("SARIF data not loaded");
 	QStringList rules;
 	auto internalRules = _sarif->SuppressedRules();
 	for (const auto& rule : internalRules) {
@@ -91,16 +109,19 @@ QStringList Cleaner::SuppressedRules() const
 
 int Cleaner::AddLocationFilter(const QString& regex)
 {
+	if (!_sarif) throw std::exception("SARIF data not loaded");
 	return _sarif->AddLocationFilter(regex.toStdString());
 }
 
 void Cleaner::RemoveLocationFilter(const QString& regex)
 {
+	if (!_sarif) throw std::exception("SARIF data not loaded");
 	_sarif->RemoveLocationFilter(regex.toStdString());
 }
 
 QStringList Cleaner::LocationFilters() const
 {
+	if (!_sarif) throw std::exception("SARIF data not loaded");
 	QStringList filters;
 	auto internalFilters = _sarif->LocationFilters();
 	for (const auto& filter : internalFilters) {
