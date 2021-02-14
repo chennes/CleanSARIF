@@ -40,7 +40,8 @@ void NewRuleSuppression::SetRulesList(const std::vector<std::tuple<QString, int>
 	int row = 0;
 	for (const auto &rule : ruleList) {
 		QTableWidgetItem* name = new QTableWidgetItem(std::get<0>(rule));
-		QTableWidgetItem* count = new QTableWidgetItem(QString::number(std::get<1>(rule)));
+		QTableWidgetItem* count = new QTableWidgetItem();
+		count->setData(Qt::EditRole, std::get<1>(rule)); // Make sure to add as an integer so it sorts correctly
 		ui->tableWidget->setItem(row, 0, name);
 		ui->tableWidget->setItem(row, 1, count);
 		++row;

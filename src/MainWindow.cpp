@@ -140,8 +140,17 @@ void MainWindow::on_removeRuleButton_clicked()
 
 void MainWindow::on_newRuleButton_clicked()
 {
-
-	NewRuleSuppression::GetNewRuleSuppression(this, _cleaner->GetRules());
+	auto rulesToSuppress = NewRuleSuppression::GetNewRuleSuppression(this, _cleaner->GetRules());
+	const int start = ui->suppressedRulesTable->rowCount();
+	ui->suppressedRulesTable->setRowCount(start + std::get<0>(rulesToSuppress).count());
+	int row = start;
+	for (auto rule = std::get<0>(rulesToSuppress).begin(); rule != std::get<0>(rulesToSuppress).end(); ++rule) {
+		QTableWidgetItem* name = new QTableWidgetItem(*rule);
+		QTableWidgetItem* note = new QTableWidgetItem(std::get<1>(rulesToSuppress));
+		ui->suppressedRulesTable->setItem(row, 0, name);
+		ui->suppressedRulesTable->setItem(row, 1, note);
+		++row;
+	}
 }
 
 void MainWindow::on_saveFiltersButton_clicked()
