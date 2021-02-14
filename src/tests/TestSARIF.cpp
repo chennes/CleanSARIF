@@ -243,3 +243,15 @@ TEST_CASE("Exported file updates base", "[sarif]") {
 	auto importedBase = sarif.GetBase();
 	REQUIRE(importedBase == newBase);
 }
+
+TEST_CASE("Rule counts are correct", "[sarif]") {
+	auto sarif = SARIF("SeveralRules.sarif");
+	auto rules = sarif.GetRules();
+	REQUIRE(rules.size() == 2);
+	REQUIRE(rules.find("rule1") != rules.end());
+	REQUIRE(rules.find("rule2") != rules.end());
+	REQUIRE(rules.find("rule3") == rules.end());
+	REQUIRE(rules["rule1"] == 2);
+	REQUIRE(rules["rule2"] == 1);;
+	REQUIRE(rules["rule3"] == 0);
+}

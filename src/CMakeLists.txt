@@ -32,6 +32,17 @@ set(UI_SRCS
     "MainWindow.ui" 
     "MainWindow.h" 
     "MainWindow.cpp"
+    "NewFileFilter.ui"
+    "NewFileFilter.h"
+    "NewFileFilter.cpp"
+    "NewRuleSuppression.ui"
+    "NewRuleSuppression.h"
+    "NewRuleSuppression.cpp"
+    "LoadingSARIF.ui"
+    "LoadingSARIF.h"
+    "LoadingSARIF.cpp"
+    "QProgressIndicator.h"
+    "QProgressIndicator.cpp"
 )
 
 set(CPP_SRCS

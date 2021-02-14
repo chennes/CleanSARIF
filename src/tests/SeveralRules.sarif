@@ -1,0 +1,65 @@
+{
+  "version": "2.1.0",
+  "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
+  "runs": [
+    {
+       "tool": {
+        "driver": {
+          "name": "Made by hand",
+          "semanticVersion": "1.2.3.4",
+          "rules": [
+            {
+              "id": "rule1",
+              "name": "Rule 001"
+            }
+            ,{
+              "id": "rule2",
+              "name": "Rule 002"
+            }
+          ]
+        }
+      },
+      "results": [
+        {
+          "ruleId": "rule1",
+          "message": { "text": "This is the first rule" },
+          "level": "error",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": { "uri": "/home/jdoe/repo/src/App/Application.cpp"},
+                "region": { "startLine": 1, "endLine": 1, "startColumn": 1, "endColumn": 2147483647 }
+              }
+            }
+          ]
+        }
+        ,{
+          "ruleId": "rule1",
+          "message": { "text": "This is the first rule" },
+          "level": "error",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": { "uri": "/home/jdoe/repo/src/App/Application.cpp"},
+                "region": { "startLine": 1, "endLine": 1, "startColumn": 1, "endColumn": 2147483647 }
+              }
+            }
+          ]
+        }
+        ,{
+          "ruleId": "rule2",
+          "message": { "text": "This is the second rule" },
+          "level": "error",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": { "uri": "/home/jdoe/repo/src/App/Application.cpp"},
+                "region": { "startLine": 1, "endLine": 1, "startColumn": 1, "endColumn": 2147483647 }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

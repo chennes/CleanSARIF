@@ -64,6 +64,11 @@ public:
 	 */
 	void SetBase(const std::string &newBase);
 
+	/** 
+	 * \brief Get a list of all of the rules and their number of occurrences
+	 */
+	std::map<std::string, int> GetRules() const;
+
 	/**
 	 * \brief When outputting this object, don't include rule \s ruleID
 	 * \param ruleID The ID of the rule to suppress

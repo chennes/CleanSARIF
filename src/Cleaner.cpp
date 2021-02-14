@@ -35,47 +35,54 @@
 #include <filesystem>
 
 
-Cleaner::Cleaner(const QString& infile, const QString& outfile) :
-	_infile(infile),
-	_outfile(outfile),
-	_sarif(infile.toStdString())
+Cleaner::Cleaner()
 {
 }
 
-std::vector<std::tuple<QString, QString>> Cleaner::Rules() const
+void Cleaner::SetInfile(const QString& infile)
 {
-	auto internalRules = _sarif.Rules();
-	std::vector<std::tuple<QString, QString>> rules;
+	_infile = infile;
+}
+
+void Cleaner::SetOutfile(const QString& outfile)
+{
+	_outfile = outfile;
+}
+
+std::vector<std::tuple<QString, int>> Cleaner::GetRules() const
+{
+	auto internalRules = _sarif->GetRules();
+	std::vector<std::tuple<QString, int>> rules;
 	for (const auto& r : internalRules) {
-		rules.emplace_back(std::make_tuple(QString::fromStdString(std::get<0>(r)), QString::fromStdString(std::get<1>(r))));
+		rules.emplace_back(std::make_tuple(QString::fromStdString(r.first), r.second));
 	}
 	return rules;
 }
 
 QString Cleaner::GetBase() const
 {
-	return QString::fromStdString(_sarif.GetBase());
+	return QString::fromStdString(_sarif->GetBase());
 }
 
 void Cleaner::SetBase(const QString& newBase)
 {
-	_sarif.SetBase(newBase.toStdString());
+	_sarif->SetBase(newBase.toStdString());
 }
 
 int Cleaner::SuppressRule(const QString& ruleID)
 {
-	return _sarif.SuppressRule(ruleID.toStdString());
+	return _sarif->SuppressRule(ruleID.toStdString());
 }
 
 void Cleaner::UnsuppressRule(const QString& ruleID)
 {
-	_sarif.UnsuppressRule(ruleID.toStdString());
+	_sarif->UnsuppressRule(ruleID.toStdString());
 }
 
 QStringList Cleaner::SuppressedRules() const
 {
 	QStringList rules;
-	auto internalRules = _sarif.SuppressedRules();
+	auto internalRules = _sarif->SuppressedRules();
 	for (const auto& rule : internalRules) {
 		rules.append(QString::fromStdString(rule));
 	}
@@ -84,18 +91,18 @@ QStringList Cleaner::SuppressedRules() const
 
 int Cleaner::AddLocationFilter(const QString& regex)
 {
-	return _sarif.AddLocationFilter(regex.toStdString());
+	return _sarif->AddLocationFilter(regex.toStdString());
 }
 
 void Cleaner::RemoveLocationFilter(const QString& regex)
 {
-	_sarif.RemoveLocationFilter(regex.toStdString());
+	_sarif->RemoveLocationFilter(regex.toStdString());
 }
 
 QStringList Cleaner::LocationFilters() const
 {
 	QStringList filters;
-	auto internalFilters = _sarif.LocationFilters();
+	auto internalFilters = _sarif->LocationFilters();
 	for (const auto& filter : internalFilters) {
 		filters.append(QString::fromStdString(filter));
 	}
@@ -104,6 +111,28 @@ QStringList Cleaner::LocationFilters() const
 
 void Cleaner::run()
 {
+	if (_infile.isEmpty()) {
+		emit errorOccurred(tr("No input file set, aborting run"));
+		exit(-1);
+		return;
+	}
+
+	if (!_sarif) {
+		try {
+			_sarif = std::make_unique<SARIF>(_infile.toStdString());
+		}
+		catch (std::exception& e) {
+			emit errorOccurred(e.what());
+			exit(-1);
+			return;
+		}
+		emit fileLoaded(_infile);
+	}
+
+	if (_outfile.isEmpty()) {
+		exit(0);
+		return;
+	}
 
 	if (_infile == _outfile) {
 		// Make a backup:
@@ -119,7 +148,7 @@ void Cleaner::run()
 
 
 	try {
-		_sarif.Export(_outfile.toStdString());
+		_sarif->Export(_outfile.toStdString());
 	}
 	catch (const std::exception& e) {
 		emit errorOccurred(e.what());
@@ -133,5 +162,5 @@ void Cleaner::run()
 	}
 
 
-	emit processComplete();
+	emit fileWritten(_outfile);
 }

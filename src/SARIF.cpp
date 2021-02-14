@@ -199,6 +199,26 @@ void SARIF::SetBase(const std::string& newBase)
 	_overrideBaseWith = newBase;
 }
 
+std::map<std::string, int> SARIF::GetRules() const
+{
+	std::map<std::string, int> rules;
+	int counter = 0;
+	auto o = _json.object();
+	if (o.contains("runs") && o["runs"].isArray()) {
+		auto runs = o["runs"].toArray().first().toObject();
+		if (runs.contains("results") && runs["results"].isArray()) {
+			auto resultArray = runs["results"].toArray();
+			for (auto result = resultArray.begin(); result != resultArray.end(); ++result) {
+				auto key = SARIF::GetRule(result->toObject());
+				if (rules.find(key) == rules.end())
+					rules[key] = 0;
+				rules[key]++;
+			}
+		}
+	}
+	return rules;
+}
+
 int SARIF::SuppressRule(const std::string& ruleID)
 {
 	_suppressedRules.push_back(ruleID);

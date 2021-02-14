@@ -35,8 +35,11 @@ namespace Ui {
 	class MainWindow;
 }
 
+class Cleaner;
+class LoadingSARIF;
+
 /**
- * \brief The main (and only) window of the program.
+ * \brief The main window of the program.
  * 
  * Construct a single MainWindow object at the beginning of the program: it expects no
  * parent widget and is entirely self-contained. There are no further user-callable
@@ -52,6 +55,8 @@ public:
 
 protected:
 
+	void loadSARIF(const QString &filename);
+
 	/**
 	 * \brief Disable all widgets that cannot be used when an input file is not set 
 	 */
@@ -62,20 +67,40 @@ protected:
 	 */
 	void enableForInput();
 
+	/**
+	 * \brief Create a new default outfile name, overwriting the contents of the outfile line edit
+	 */
+	void createDefaultOutfileName();
+
 	void closeEvent(QCloseEvent* event) override;
 	void dragEnterEvent(QDragEnterEvent* event) override;
 	void dropEvent(QDropEvent* event) override;
 
 private slots:
+
+	// Auto-connected slots
 	void on_browseInputFileButton_clicked();
 	void on_browseOutputFileButton_clicked();
-	void on_runButton_clicked();
+	void on_browseBasePathButton_clicked();
+	void on_removeFileFilterButton_clicked();
+	void on_newFileFilterButton_clicked();
+	void on_removeRuleButton_clicked();
+	void on_newRuleButton_clicked();
+	void on_saveFiltersButton_clicked();
+	void on_loadFiltersButton_clicked();
+	void on_cleanButton_clicked();
 	void on_closeButton_clicked();
+
 	void handleSuccess();
 	void handleError(const std::string &message);
 
+	void loadComplete(const QString &filename);
+	void loadFailed(const QString &message);
+
 private:
 	std::unique_ptr<Ui::MainWindow> ui;
+	std::unique_ptr<Cleaner> _cleaner;
+	std::unique_ptr<LoadingSARIF> _loadingDialog;
 };
 
 #endif // _CLEANSARIF_MAINWINDOW_H_

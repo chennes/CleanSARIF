@@ -37,6 +37,7 @@ set(TEST_AUX
   SmallValidA.sarif
   SmallValidAPlusWhitespace.sarif
   SmallValidB.sarif
+  SeveralRules.sarif
 )
 
 add_executable(tests ${TEST_SRCS} ${APP_SRCS})

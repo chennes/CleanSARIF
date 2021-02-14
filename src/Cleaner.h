@@ -47,24 +47,38 @@ class Cleaner : public QThread {
 public:
 
 	/**
-	 * \brief Construct a Cleaner that reads from \a infile and writes to \a outfile. 
-	 * 
+	 * \brief Construct a Cleaner with no initial state 
+	 */
+	Cleaner();
+		
+	~Cleaner() = default;
+
+	/**
+	 * \brief Set the input file
 	 * \param infile Must be a readable file, and is expected to be a SARIF JSON-formatted file.
+	 * \note If this is not set prior to running the thread, the run will do nothing. Just setting
+	 * it does not execute the thread, you must still call start() (or run(), for asynchronous
+	 * operation).
+	 */
+	void SetInfile(const QString& infile);
+
+	/**
+	 * \brief Set the output filename
 	 * \param outfile Must be writable, and can be the same as \a infile. If it is the same, a
 	 * backup file is automatically created. \a outfile will only be created in the event of complete
 	 * success. Any failures in processing prevent it from being created, or from overwriting
 	 * \a infile if that was what was requested.
+	 * \note If outfile is set to something other than "", then executing this thread runs both the
+	 * load and the clean routines. If outfile is unset, or set to "", then only the load is run.
 	 */
-	Cleaner(const QString& infile, const QString& outfile);
-		
-	~Cleaner() = default;
+	void SetOutfile(const QString &outfile);
 		
 
 	/**
 	 * \brief List the rules present in this SARIF object
-	 * \returns a tuple containing the ID of the rule, and its help text
+	 * \returns a tuple containing the ID of the rule and its hits count
 	 */
-	std::vector<std::tuple<QString, QString>> Rules() const;
+	std::vector<std::tuple<QString, int>> GetRules() const;
 
 	/**
 	 * \brief Get the part of the artifactLocation that all results have in common
@@ -125,9 +139,14 @@ public:
 signals:
 
 	/** 
-		* \brief Signals successful completion of the run. 
-		*/
-	void processComplete();
+     * \brief The final cleaned SARIF file was written
+	 */
+	void fileWritten(const QString & filename);
+
+	/**
+	 * \brief The input SARIF file was loaded
+	 */
+	void fileLoaded(const QString & filename);
 
 	/**
 		* \brief Signals failure of the run.
@@ -140,7 +159,7 @@ private:
 	QString _infile;
 	QString _outfile;
 
-	SARIF _sarif;
+	std::unique_ptr<SARIF> _sarif;
 };
 
 #endif // _CLEANSARIF_CLEANER_H_
