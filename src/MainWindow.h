@@ -94,16 +94,19 @@ private slots:
 	void fileFilterSelectionChanged();
 	void ruleSuppressionSelectionChanged();
 
-	void handleSuccess();
-	void handleError(const std::string &message);
-
 	void loadComplete(const QString &filename);
 	void loadFailed(const QString &message);
+	void cleanComplete(const QString& filename);
+
+	void cancelOperation();
 
 private:
 	std::unique_ptr<Ui::MainWindow> ui;
 	std::unique_ptr<Cleaner> _cleaner;
 	std::unique_ptr<LoadingSARIF> _loadingDialog;
+
+	QString _lastOpenedDirectory;
+	QString _lastSavedDirectory;
 };
 
 #endif // _CLEANSARIF_MAINWINDOW_H_

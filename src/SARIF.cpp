@@ -34,6 +34,11 @@
 
 SARIF::SARIF(const std::string& file)
 {
+	Load(file, []() {return false; });
+}
+
+void SARIF::Load(const std::string& file, std::function<bool(void)> interruptionRequested)
+{
 	QFile infile(QString::fromStdString(file));
 	if (!infile.open(QIODevice::ReadOnly | QIODevice::Text))
 		throw std::exception("Unable to open specified file");
@@ -52,7 +57,7 @@ SARIF::SARIF(const std::string& file)
 				auto runs = o["runs"].toArray().first().toObject();
 				if (runs.contains("results") && runs["results"].isArray()) {
 					auto resultArray = runs["results"].toArray();
-					for (auto result = resultArray.begin(); result != resultArray.end(); ++result) {
+					for (auto result = resultArray.begin(); result != resultArray.end() && !interruptionRequested(); ++result) {
 						auto uri = SARIF::GetArtifactUri(result->toObject());
 						if (base.empty())
 							base = uri;
@@ -72,7 +77,7 @@ SARIF::SARIF(const std::string& file)
 	}
 }
 
-void SARIF::Export(const std::string& file) const
+void SARIF::Export(const std::string& file, std::function<bool(void)> interruptionRequested) const
 {
 	// Pre-compile the regular expressions
 	std::vector<std::regex> compiledRegexes;
@@ -82,7 +87,7 @@ void SARIF::Export(const std::string& file) const
 
 	auto o = _json.object();
 	QJsonObject outputObject;
-	for (auto& element = o.begin(); element != o.end(); ++element) {
+	for (auto& element = o.begin(); element != o.end() && !interruptionRequested(); ++element) {
 		if (element.key() != QString::fromLatin1("runs")) {
 			outputObject.insert(element.key(), element.value());
 		}
@@ -92,10 +97,10 @@ void SARIF::Export(const std::string& file) const
 			auto oldRunsArray = element->toArray();
 			
 			QJsonArray newRunsArray;
-			for (auto& run = oldRunsArray.begin(); run != oldRunsArray.end(); ++run) {
+			for (auto& run = oldRunsArray.begin(); run != oldRunsArray.end() && !interruptionRequested(); ++run) {
 				auto runObject = run->toObject();
 				QJsonObject newRunObject;
-				for (auto& runComponent = runObject.begin(); runComponent != runObject.end(); ++runComponent) {
+				for (auto& runComponent = runObject.begin(); runComponent != runObject.end() && !interruptionRequested(); ++runComponent) {
 					if (runComponent.key() != "results") {
 						newRunObject.insert(runComponent.key(), runComponent.value());
 					}
@@ -104,7 +109,7 @@ void SARIF::Export(const std::string& file) const
 							throw std::exception("results element is not an array");
 						QJsonArray oldResultsArray = runComponent->toArray();
 						QJsonArray filteredResultsArray;
-						for (auto& result = oldResultsArray.begin(); result != oldResultsArray.end(); ++result) {
+						for (auto& result = oldResultsArray.begin(); result != oldResultsArray.end() && !interruptionRequested(); ++result) {
 
 							bool required = true;
 
@@ -141,6 +146,9 @@ void SARIF::Export(const std::string& file) const
 		}
 	}
 	QJsonDocument filteredJSONDoc(outputObject);
+
+	if (interruptionRequested())
+		throw std::exception("Export was cancelled");
 
 	// Write out the copy
 	QFile newFile(QString::fromStdString(file));

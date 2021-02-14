@@ -30,5 +30,6 @@ LoadingSARIF::LoadingSARIF(QWidget* parent) :
 	QDialog(parent), 
 	ui(new Ui::LoadingSARIF)
 {
-
+	ui->setupUi(this);
+	ui->progressIndicator->startAnimation();
 }

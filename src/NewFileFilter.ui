@@ -79,7 +79,14 @@
     </layout>
    </item>
    <item>
-    <widget class="QListWidget" name="resultsList"/>
+    <widget class="QListWidget" name="resultsList">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Preferred" vsizetype="MinimumExpanding">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+    </widget>
    </item>
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout_2">

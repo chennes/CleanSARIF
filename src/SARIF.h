@@ -28,16 +28,30 @@
 #include <QJsonDocument>
 #pragma warning(pop)
 
+#include <mutex>
+
 class SARIF
 {
 public:
+
+	/**
+	 * \brief Default construct a SARIF object with no attached data. 
+	 */
+	SARIF() = default;
 	
 	/**
 	 * \brief Construct a SARIF object from a SARIF-formatted input file
 	 * \throws std::runtime_exception if the file cannot be loaded
 	 * \param file The full path to the input file
 	 */
-	explicit SARIF(const std::string &file);
+	SARIF(const std::string &file);
+
+	/*
+	 * \brief Load SARIF data from a file
+	 * \throws std::runtime_exception if the file cannot be loaded
+	 * \param file The full path to the input file
+	 */
+	void Load(const std::string& file, std::function<bool(void)> interruptionRequested = []() {return false; });
 
 	/**
 	 * \brief Export to a new SARIF file
@@ -47,7 +61,7 @@ public:
 	 * Set* functions in this class. The new file is a correctly-formatted SARIF file that
 	 * has been filtered and modified according to those rules.
 	 */
-	void Export(const std::string& file) const;
+	void Export(const std::string& file, std::function<bool(void)> interruptionRequested = []() {return false; }) const;
 
 	/**
 	 * \brief List the rules present in this SARIF object

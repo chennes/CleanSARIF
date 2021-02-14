@@ -156,9 +156,9 @@ signals:
 	void fileLoaded(const QString & filename);
 
 	/**
-		* \brief Signals failure of the run.
-		* \param message A text message describing the failure.
-		*/
+	 * \brief Signals failure of the run.
+	 * \param message A text message describing the failure.
+	 */
 	void errorOccurred(const QString &message);
 
 private:
@@ -166,7 +166,7 @@ private:
 	QString _infile;
 	QString _outfile;
 
-	std::unique_ptr<SARIF> _sarif;
+	SARIF _sarif;
 };
 
 #endif // _CLEANSARIF_CLEANER_H_

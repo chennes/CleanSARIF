@@ -71,12 +71,13 @@ MainWindow::MainWindow(QWidget* parent) :
 
 	connect(ui->fileFiltersTable, &QTableWidget::itemSelectionChanged, this, &MainWindow::fileFilterSelectionChanged);
 	connect(ui->suppressedRulesTable, &QTableWidget::itemSelectionChanged, this, &MainWindow::ruleSuppressionSelectionChanged);
+	connect(_cleaner.get(), &Cleaner::errorOccurred, this, &MainWindow::loadFailed);
 
 	QSettings settings; 
 
 	settings.beginGroup("Options");
-	ui->inputFileLineEdit->setText(settings.value("inputFile", "").toString());
-	ui->outputFileLineEdit->setText(settings.value("outputFile", "").toString());
+	_lastOpenedDirectory = settings.value("lastOpenedDirectory", QDir::homePath()).toString();
+	_lastSavedDirectory = settings.value("lastSavedDirectory", "").toString();
 	settings.endGroup();
 
 	if (ui->inputFileLineEdit->text().isEmpty())
@@ -104,14 +105,19 @@ void MainWindow::loadSARIF(const QString& filename)
 	_loadingDialog = std::make_unique<LoadingSARIF>(this);
 	_loadingDialog->show();
 	_cleaner->SetInfile(filename);
+	connect(_loadingDialog.get(), &LoadingSARIF::rejected, _cleaner.get(), &Cleaner::requestInterruption);
+	connect(_loadingDialog.get(), &LoadingSARIF::accepted, _cleaner.get(), &Cleaner::requestInterruption);
 	connect(_cleaner.get(), &Cleaner::fileLoaded, this, &MainWindow::loadComplete);
-	connect(_cleaner.get(), &Cleaner::errorOccurred, this, &MainWindow::loadFailed);
 	_cleaner->start();
 }
 
 void MainWindow::on_browseInputFileButton_clicked()
 {
-	auto filename = QFileDialog::getOpenFileName(this, tr("Select SARIF file to clean"), ui->inputFileLineEdit->text(),tr("SARIF files (*.sarif)"));
+	QString startingDirectory = ui->inputFileLineEdit->text();
+	if (startingDirectory.isEmpty()) {
+		startingDirectory = _lastOpenedDirectory;
+	}
+	auto filename = QFileDialog::getOpenFileName(this, tr("Select SARIF file to clean"), startingDirectory,tr("SARIF files (*.sarif)"));
 	if (!filename.isEmpty()) {
 		loadSARIF(filename);
 	}
@@ -119,7 +125,11 @@ void MainWindow::on_browseInputFileButton_clicked()
 
 void MainWindow::on_browseOutputFileButton_clicked()
 {
-	auto filename = QFileDialog::getSaveFileName(this, tr("Save new file as..."), ui->outputFileLineEdit->text());
+	QString startingDirectory = ui->outputFileLineEdit->text();
+	if (startingDirectory.isEmpty()) {
+		startingDirectory = _lastSavedDirectory;
+	}
+	auto filename = QFileDialog::getSaveFileName(this, tr("Save new file as..."), _lastSavedDirectory);
 	if (!filename.isEmpty())
 		ui->outputFileLineEdit->setText(filename);
 }
@@ -190,8 +200,8 @@ void MainWindow::on_newRuleButton_clicked()
 	const int start = ui->suppressedRulesTable->rowCount();
 	ui->suppressedRulesTable->setRowCount(start + std::get<0>(rulesToSuppress).count());
 	int row = start;
-	for (auto rule = std::get<0>(rulesToSuppress).begin(); rule != std::get<0>(rulesToSuppress).end(); ++rule) {
-		QTableWidgetItem* name = new QTableWidgetItem(*rule);
+	for (const auto &rule : std::get<0>(rulesToSuppress)) {
+		QTableWidgetItem* name = new QTableWidgetItem(rule);
 		QTableWidgetItem* note = new QTableWidgetItem(std::get<1>(rulesToSuppress));
 		ui->suppressedRulesTable->setItem(row, 0, name);
 		ui->suppressedRulesTable->setItem(row, 1, note);
@@ -210,13 +220,29 @@ void MainWindow::on_loadFiltersButton_clicked()
 void MainWindow::on_cleanButton_clicked()
 {
 	ui->cleanButton->setDisabled(true);
+
+	_cleaner->SetBase(ui->basePathLineEdit->text());
+
+	for (int row = 0; row < ui->fileFiltersTable->rowCount(); ++row) {
+		_cleaner->AddLocationFilter(ui->fileFiltersTable->item(row,0)->text());
+	}
+
+	for (int row = 0; row < ui->suppressedRulesTable->rowCount(); ++row) {
+		_cleaner->SuppressRule(ui->suppressedRulesTable->item(row,0)->text());
+	}
+
+	_cleaner->SetOutfile(ui->outputFileLineEdit->text());
+
+	_loadingDialog = std::make_unique<LoadingSARIF>(this);
+	_loadingDialog->show();
+	connect(_loadingDialog.get(), &LoadingSARIF::rejected, _cleaner.get(), &Cleaner::requestInterruption);
+	connect(_loadingDialog.get(), &LoadingSARIF::accepted, _cleaner.get(), &Cleaner::requestInterruption);
+	connect(_cleaner.get(), &Cleaner::fileWritten, this, &MainWindow::cleanComplete);
+	_cleaner->start();
 	
 	// Store off the last thing we ran as our default settings for next time...
 	QSettings settings;	
 	settings.beginGroup("Options");
-
-	settings.setValue("inputFile", ui->inputFileLineEdit->text());
-	settings.setValue("outputFile", ui->outputFileLineEdit->text());
 	
 	settings.endGroup();
 	settings.sync();
@@ -255,30 +281,48 @@ void MainWindow::ruleSuppressionSelectionChanged()
 	}
 }
 
-void MainWindow::handleSuccess()
-{
-	QMessageBox::information(this, tr("Processing complete"), tr("The SARIF file was processed successfully."), QMessageBox::Close);
-	ui->cleanButton->setEnabled(true);
-}
-
-void MainWindow::handleError(const std::string &message)
-{
-	QMessageBox::warning(this, tr("Processing failed"), QString::fromStdString(message), QMessageBox::Close);
-	ui->cleanButton->setEnabled(true);
-}
-
 void MainWindow::loadComplete(const QString& filename)
 {
 	_loadingDialog.reset();
 	ui->inputFileLineEdit->setText(filename);
 	enableForInput();
 	createDefaultOutfileName();
+	disconnect(_cleaner.get(), &Cleaner::fileLoaded, this, &MainWindow::loadComplete);
+
+	QFileInfo fi(filename);
+	_lastOpenedDirectory = fi.path();
+
+	QSettings settings;
+	settings.beginGroup("Options");
+	settings.setValue("lastOpenedDirectory", _lastOpenedDirectory);
+	settings.endGroup();
 }
 
 void MainWindow::loadFailed(const QString& message)
 {
 	_loadingDialog.reset();
-	QMessageBox::critical(this, tr("Loading failed"), message, QMessageBox::Close);
+	QMessageBox::critical(this, tr("Processing failed"), message, QMessageBox::Close);
+}
+
+void MainWindow::cleanComplete(const QString& filename)
+{
+	_loadingDialog.reset();
+	disconnect(_cleaner.get(), &Cleaner::fileLoaded, this, &MainWindow::cleanComplete);
+	QMessageBox::information(this, tr("Processing complete"), tr("Cleaning complete. Output file in:\n") + filename, QMessageBox::Close);
+
+	QFileInfo fi(filename);
+	_lastSavedDirectory = fi.path();
+
+	QSettings settings;
+	settings.beginGroup("Options");
+	settings.setValue("lastSavedDirectory", _lastSavedDirectory);
+	settings.endGroup();
+
+}
+
+void MainWindow::cancelOperation()
+{
+	_cleaner->requestInterruption();
 }
 
 void MainWindow::disableForNoInput()
@@ -329,7 +373,7 @@ void MainWindow::createDefaultOutfileName()
 	QFileInfo fi(infile);
 	auto path = fi.path();
 	auto basename = fi.completeBaseName();
-	auto newDefault = path + basename + tr("_cleaned", "Append to cleaned filename") + ".sarif";
+	auto newDefault = path + "/" + basename + tr("_filtered", "Appended to default output filename") + ".sarif";
 	ui->outputFileLineEdit->setText(newDefault);
 }
 
@@ -353,7 +397,6 @@ void MainWindow::dragEnterEvent(QDragEnterEvent* event)
 void MainWindow::dropEvent(QDropEvent* event)
 {
 	ui->inputFileLineEdit->setText(event->mimeData()->urls().first().toLocalFile());
-	ui->outputFileLineEdit->setText(event->mimeData()->urls().first().toLocalFile());
-
+	createDefaultOutfileName();
 	event->acceptProposedAction();
 }

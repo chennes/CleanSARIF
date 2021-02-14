@@ -36,6 +36,8 @@
 #include <algorithm>
 #include <filesystem>
 
+using namespace std::placeholders;
+
 
 Cleaner::Cleaner()
 {
@@ -53,8 +55,7 @@ void Cleaner::SetOutfile(const QString& outfile)
 
 std::vector<std::tuple<QString, int>> Cleaner::GetRules() const
 {
-	if (!_sarif) throw std::exception("SARIF data not loaded");
-	auto internalRules = _sarif->GetRules();
+	auto internalRules = _sarif.GetRules();
 	std::vector<std::tuple<QString, int>> rules;
 	for (const auto& r : internalRules) {
 		rules.emplace_back(std::make_tuple(QString::fromStdString(r.first), r.second));
@@ -64,9 +65,8 @@ std::vector<std::tuple<QString, int>> Cleaner::GetRules() const
 
 QStringList Cleaner::GetFiles() const
 {
-	if (!_sarif) throw std::exception("SARIF data not loaded");
 	QStringList files;
-	auto internalFiles = _sarif->Files();
+	auto internalFiles = _sarif.Files();
 	for (const auto& file : internalFiles) {
 		files.append(QString::fromStdString(file));
 	}
@@ -75,32 +75,28 @@ QStringList Cleaner::GetFiles() const
 
 QString Cleaner::GetBase() const
 {
-	if (!_sarif) throw std::exception("SARIF data not loaded");
-	return QString::fromStdString(_sarif->GetBase());
+	return QString::fromStdString(_sarif.GetBase());
 }
 
 void Cleaner::SetBase(const QString& newBase)
 {
-	_sarif->SetBase(newBase.toStdString());
+	_sarif.SetBase(newBase.toStdString());
 }
 
 int Cleaner::SuppressRule(const QString& ruleID)
 {
-	if (!_sarif) throw std::exception("SARIF data not loaded");
-	return _sarif->SuppressRule(ruleID.toStdString());
+	return _sarif.SuppressRule(ruleID.toStdString());
 }
 
 void Cleaner::UnsuppressRule(const QString& ruleID)
 {
-	if (!_sarif) throw std::exception("SARIF data not loaded");
-	_sarif->UnsuppressRule(ruleID.toStdString());
+	_sarif.UnsuppressRule(ruleID.toStdString());
 }
 
 QStringList Cleaner::SuppressedRules() const
 {
-	if (!_sarif) throw std::exception("SARIF data not loaded");
 	QStringList rules;
-	auto internalRules = _sarif->SuppressedRules();
+	auto internalRules = _sarif.SuppressedRules();
 	for (const auto& rule : internalRules) {
 		rules.append(QString::fromStdString(rule));
 	}
@@ -109,21 +105,18 @@ QStringList Cleaner::SuppressedRules() const
 
 int Cleaner::AddLocationFilter(const QString& regex)
 {
-	if (!_sarif) throw std::exception("SARIF data not loaded");
-	return _sarif->AddLocationFilter(regex.toStdString());
+	return _sarif.AddLocationFilter(regex.toStdString());
 }
 
 void Cleaner::RemoveLocationFilter(const QString& regex)
 {
-	if (!_sarif) throw std::exception("SARIF data not loaded");
-	_sarif->RemoveLocationFilter(regex.toStdString());
+	_sarif.RemoveLocationFilter(regex.toStdString());
 }
 
 QStringList Cleaner::LocationFilters() const
 {
-	if (!_sarif) throw std::exception("SARIF data not loaded");
 	QStringList filters;
-	auto internalFilters = _sarif->LocationFilters();
+	auto internalFilters = _sarif.LocationFilters();
 	for (const auto& filter : internalFilters) {
 		filters.append(QString::fromStdString(filter));
 	}
@@ -138,17 +131,15 @@ void Cleaner::run()
 		return;
 	}
 
-	if (!_sarif) {
-		try {
-			_sarif = std::make_unique<SARIF>(_infile.toStdString());
-		}
-		catch (std::exception& e) {
-			emit errorOccurred(e.what());
-			exit(-1);
-			return;
-		}
-		emit fileLoaded(_infile);
+	try {
+		_sarif.Load(_infile.toStdString(), std::bind(&Cleaner::isInterruptionRequested, QThread::currentThread()));
 	}
+	catch (std::exception& e) {
+		emit errorOccurred(e.what());
+		exit(-1);
+		return;
+	}
+	emit fileLoaded(_infile);
 
 	if (_outfile.isEmpty()) {
 		exit(0);
@@ -169,7 +160,7 @@ void Cleaner::run()
 
 
 	try {
-		_sarif->Export(_outfile.toStdString());
+		_sarif.Export(_outfile.toStdString());
 	}
 	catch (const std::exception& e) {
 		emit errorOccurred(e.what());
@@ -181,7 +172,6 @@ void Cleaner::run()
 		exit(-1);
 		return;
 	}
-
 
 	emit fileWritten(_outfile);
 }
