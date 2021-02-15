@@ -80,6 +80,16 @@ QString Cleaner::GetBase() const
 
 void Cleaner::SetBase(const QString& newBase)
 {
+	// If the old base ended with a slash or backslash, make sure the new one does too
+	auto oldBase = QString::fromStdString(_sarif.GetBase());
+	QString adjustedBase = newBase;
+	if (*oldBase.rbegin() == '/' && *adjustedBase.rbegin() != '/') {
+		adjustedBase += "/";
+	}
+	else if (*oldBase.rbegin() == '\\' && *adjustedBase.rbegin() != '\\') {
+		adjustedBase += "\\";
+	}
+
 	_sarif.SetBase(newBase.toStdString());
 }
 
