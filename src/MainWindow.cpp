@@ -66,7 +66,7 @@ MainWindow::MainWindow(QWidget* parent) :
 	std::string version = std::format("v{}.{}.{}", CleanSARIF_VERSION_MAJOR, CleanSARIF_VERSION_MINOR, CleanSARIF_VERSION_PATCH);
 #else
 	std::ostringstream s;
-	s << "v" << CleanSARIF_VERSION_MAJOR << "." << CleanSARIF_VERSION_MINOR << "." << CleanSARIF_VERSION_PATCH << " beta";
+	s << "v" << CleanSARIF_VERSION_MAJOR << "." << CleanSARIF_VERSION_MINOR << "." << CleanSARIF_VERSION_PATCH << " RC1";
 	std::string version = s.str();
 #endif
 	ui->versionLabel->setText(QString::fromStdString(version));

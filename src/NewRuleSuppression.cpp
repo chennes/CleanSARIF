@@ -44,6 +44,7 @@ NewRuleSuppression::NewRuleSuppression(QWidget* parent) :
 	move(settings.value("pos", upperLeft).toPoint());
 	settings.endGroup();
 
+	ui->tableWidget->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
 }
 
 NewRuleSuppression::~NewRuleSuppression()

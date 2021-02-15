@@ -107,10 +107,10 @@ void SARIF::Export(const std::string& file, std::function<bool(void)> interrupti
 				auto runObject = run->toObject();
 				QJsonObject newRunObject;
 				for (auto runComponent = runObject.begin(); runComponent != runObject.end() && !interruptionRequested(); ++runComponent) {
-					if (runComponent.key() != "results") {
-						newRunObject.insert(runComponent.key(), runComponent.value());
+					if (runComponent.key() == "artifacts") {
+						// For now, strip out all of the artifacts
 					}
-					else {
+					else if (runComponent.key() == "results") {
 						if (!runComponent->isArray())
 							throw std::runtime_error("results element is not an array");
 						QJsonArray oldResultsArray = runComponent->toArray();
@@ -144,6 +144,9 @@ void SARIF::Export(const std::string& file, std::function<bool(void)> interrupti
 							}
 						}
 						newRunObject.insert("results", filteredResultsArray);
+					}
+					else {
+						newRunObject.insert(runComponent.key(), runComponent.value());
 					}
 				}
 				newRunsArray.append(newRunObject);

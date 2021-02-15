@@ -1,7 +1,18 @@
 # CleanSARIF
 A small GUI app to clean a SARIF (Static Analysis Results Interchange Format) file. It allows you to bulk change the location of the files that were analyzed, to exclude files or directories based on arbitary regular expressions, and to remove analysis results by tag.
 
+![Screenshot of CleanSARIF](Screenshot.png)
+
+# Features (and "Features")
+* Removes the entire "artifacts" section, greatly reducing filesize and enabling Visual Studio to read even large results sets (the current VS size limit is 5Mb).
+* Bulk-renaming the location URI prior to loading in a reader can bypass the need to locate the first file, and in some cases fixes problems when the URI includes path components not present on the computer reading the analysis results.
+* By allowing data-reduction as a post-processing step, individual developers can focus on their own sections of the code without needing separate analyzer runs.
+* Makes progress towards world peace by making developers using static analysis results less cranky.
+
 ## Installing on Windows
+
+COMING SOON...
+
 Download either the standalone 7-zip file or the installer executable file from the [releases page](https://github.com/chennes/SARIFCleaner/releases/).
 
 ## Building from source
