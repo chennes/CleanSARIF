@@ -41,11 +41,11 @@ void SARIF::Load(const std::string& file, std::function<bool(void)> interruption
 {
 	QFile infile(QString::fromStdString(file));
 	if (!infile.open(QIODevice::ReadOnly | QIODevice::Text))
-		throw std::exception("Unable to open specified file");
+		throw std::runtime_error("Unable to open specified file");
 	auto fileContents = infile.readAll();
 	_json = QJsonDocument::fromJson(fileContents);
 	if (_json.isNull())
-		throw std::exception("File does not contain valid JSON data");
+		throw std::runtime_error("File does not contain valid JSON data");
 
 	// Make sure this is really SARIF data:
 	auto o = _json.object();
@@ -69,11 +69,11 @@ void SARIF::Load(const std::string& file, std::function<bool(void)> interruption
 			_originalBasePath = base;
 		}
 		else {
-			throw std::exception("File read and JSON parsed, but schema is not SARIF");
+			throw std::runtime_error("File read and JSON parsed, but schema is not SARIF");
 		}
 	}
 	else {
-		throw std::exception("File read, but no $schema found");
+		throw std::runtime_error("File read, but no $schema found");
 	}
 }
 
@@ -93,7 +93,7 @@ void SARIF::Export(const std::string& file, std::function<bool(void)> interrupti
 		}
 		else {
 			if (!element->isArray())
-				throw std::exception("runs element is not an array");
+				throw std::runtime_error("runs element is not an array");
 			auto oldRunsArray = element->toArray();
 			
 			QJsonArray newRunsArray;
@@ -106,7 +106,7 @@ void SARIF::Export(const std::string& file, std::function<bool(void)> interrupti
 					}
 					else {
 						if (!runComponent->isArray())
-							throw std::exception("results element is not an array");
+							throw std::runtime_error("results element is not an array");
 						QJsonArray oldResultsArray = runComponent->toArray();
 						QJsonArray filteredResultsArray;
 						for (auto& result = oldResultsArray.begin(); result != oldResultsArray.end() && !interruptionRequested(); ++result) {
@@ -148,7 +148,7 @@ void SARIF::Export(const std::string& file, std::function<bool(void)> interrupti
 	QJsonDocument filteredJSONDoc(outputObject);
 
 	if (interruptionRequested())
-		throw std::exception("Export was cancelled");
+		throw std::runtime_error("Export was cancelled");
 
 	// Write out the copy
 	QFile newFile(QString::fromStdString(file));
@@ -156,7 +156,7 @@ void SARIF::Export(const std::string& file, std::function<bool(void)> interrupti
 	if (newFile.isOpen())
 		newFile.write(filteredJSONDoc.toJson());
 	else
-		throw std::exception("Could not open requested file for writing");
+		throw std::runtime_error("Could not open requested file for writing");
 }
 
 std::vector<std::tuple<std::string, std::string>> SARIF::Rules() const

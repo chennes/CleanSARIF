@@ -23,6 +23,8 @@
 #include <string>
 #include <vector>
 #include <set>
+#include <map>
+#include <exception>
 
 #pragma warning(push, 1) 
 #include <QJsonDocument>
@@ -56,7 +58,7 @@ public:
 	/**
 	 * \brief Export to a new SARIF file
 	 * \param file The file to export to. Overwritten if pre-existing.
-	 * \throws If export fails for any reason, a std::exception is thrown.
+	 * \throws If export fails for any reason, a std::runtime_error is thrown.
 	 * The exported file reflects the application of the filters set in the various
 	 * Set* functions in this class. The new file is a correctly-formatted SARIF file that
 	 * has been filtered and modified according to those rules.

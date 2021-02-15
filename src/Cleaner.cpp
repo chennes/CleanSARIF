@@ -134,7 +134,7 @@ void Cleaner::run()
 	try {
 		_sarif.Load(_infile.toStdString(), std::bind(&Cleaner::isInterruptionRequested, QThread::currentThread()));
 	}
-	catch (std::exception& e) {
+	catch (std::runtime_error& e) {
 		emit errorOccurred(e.what());
 		exit(-1);
 		return;
@@ -162,7 +162,7 @@ void Cleaner::run()
 	try {
 		_sarif.Export(_outfile.toStdString());
 	}
-	catch (const std::exception& e) {
+	catch (const std::runtime_error& e) {
 		emit errorOccurred(e.what());
 		exit(-1);
 		return;
