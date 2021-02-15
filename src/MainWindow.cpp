@@ -60,7 +60,7 @@ MainWindow::MainWindow(QWidget* parent) :
 	_cleaner(std::make_unique<Cleaner>())
 {
 	ui->setupUi(this);
-	setWindowIcon(QIcon("ui_icon.svg"));
+	setWindowIcon(QIcon(":/ui_icon.svg"));
 	
 #if __cplusplus >= 202000L
 	std::string version = std::format("v{}.{}.{}", CleanSARIF_VERSION_MAJOR, CleanSARIF_VERSION_MINOR, CleanSARIF_VERSION_PATCH);

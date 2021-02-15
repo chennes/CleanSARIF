@@ -29,6 +29,7 @@ find_package(Qt5 COMPONENTS Widgets REQUIRED)
 set(UI_SRCS
     "CleanSARIF.cpp" 
     "CleanSARIF.h" 
+    "CleanSARIF.qrc"
     "MainWindow.ui" 
     "MainWindow.h" 
     "MainWindow.cpp"
