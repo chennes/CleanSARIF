@@ -87,7 +87,7 @@ void SARIF::Export(const std::string& file, std::function<bool(void)> interrupti
 
 	auto o = _json.object();
 	QJsonObject outputObject;
-	for (auto& element = o.begin(); element != o.end() && !interruptionRequested(); ++element) {
+	for (auto element = o.begin(); element != o.end() && !interruptionRequested(); ++element) {
 		if (element.key() != QString::fromLatin1("runs")) {
 			outputObject.insert(element.key(), element.value());
 		}
@@ -97,10 +97,10 @@ void SARIF::Export(const std::string& file, std::function<bool(void)> interrupti
 			auto oldRunsArray = element->toArray();
 			
 			QJsonArray newRunsArray;
-			for (auto& run = oldRunsArray.begin(); run != oldRunsArray.end() && !interruptionRequested(); ++run) {
+			for (auto run = oldRunsArray.begin(); run != oldRunsArray.end() && !interruptionRequested(); ++run) {
 				auto runObject = run->toObject();
 				QJsonObject newRunObject;
-				for (auto& runComponent = runObject.begin(); runComponent != runObject.end() && !interruptionRequested(); ++runComponent) {
+				for (auto runComponent = runObject.begin(); runComponent != runObject.end() && !interruptionRequested(); ++runComponent) {
 					if (runComponent.key() != "results") {
 						newRunObject.insert(runComponent.key(), runComponent.value());
 					}
@@ -109,7 +109,7 @@ void SARIF::Export(const std::string& file, std::function<bool(void)> interrupti
 							throw std::runtime_error("results element is not an array");
 						QJsonArray oldResultsArray = runComponent->toArray();
 						QJsonArray filteredResultsArray;
-						for (auto& result = oldResultsArray.begin(); result != oldResultsArray.end() && !interruptionRequested(); ++result) {
+						for (auto result = oldResultsArray.begin(); result != oldResultsArray.end() && !interruptionRequested(); ++result) {
 
 							bool required = true;
 
@@ -352,7 +352,7 @@ void SARIF::ReplaceUri(const std::string& lookFor, const std::string& replaceWit
 	if (in.isArray()) {
 		QJsonArray replacementArray;
 		auto oldArray = in.toArray(); // Makes a copy
-		for (auto& element = oldArray.begin(); element != oldArray.end(); ++element) {
+		for (auto element = oldArray.begin(); element != oldArray.end(); ++element) {
 			SARIF::ReplaceUri(lookFor, replaceWith, *element);
 			replacementArray.append(*element);
 		}
@@ -361,7 +361,7 @@ void SARIF::ReplaceUri(const std::string& lookFor, const std::string& replaceWit
 	else if (in.isObject()) {
 		QJsonObject replacementObject;
 		auto oldObject = in.toObject(); // Makes a copy
-		for (auto& element = oldObject.begin(); element != oldObject.end(); ++element) {
+		for (auto element = oldObject.begin(); element != oldObject.end(); ++element) {
 			if (element->isString()) {
 				auto oldValue = element.value().toString().toStdString();
 				if (element.key() == "uri" && SARIF::MaxMatch(oldValue, lookFor) == lookFor) {
