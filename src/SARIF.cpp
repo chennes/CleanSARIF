@@ -34,7 +34,7 @@
 
 SARIF::SARIF(const std::string& file)
 {
-	Load(file, []() {return false; });
+	Load(file);
 }
 
 void SARIF::Load(const std::string& file, std::function<bool(void)> interruptionRequested)
@@ -87,8 +87,14 @@ void SARIF::Export(const std::string& file, std::function<bool(void)> interrupti
 
 	auto o = _json.object();
 	QJsonObject outputObject;
+	std::string sarifVersion = "2.1.0"; // The default, if there isn't one in the file
 	for (auto element = o.begin(); element != o.end() && !interruptionRequested(); ++element) {
-		if (element.key() != QString::fromLatin1("runs")) {
+		if (element.key() == QString::fromLatin1("version")) {
+			// Do NOT output the version here. The SARIF standard requires that the version line be first, even
+			// though JSON is unordered. Store it, and we'll insert it manually once we're done writing the file.
+			sarifVersion = element.value().toString().toStdString();
+		}
+		else if (element.key() != QString::fromLatin1("runs")) {
 			outputObject.insert(element.key(), element.value());
 		}
 		else {
@@ -150,13 +156,28 @@ void SARIF::Export(const std::string& file, std::function<bool(void)> interrupti
 	if (interruptionRequested())
 		throw std::runtime_error("Export was cancelled");
 
+	auto jsonBytes = filteredJSONDoc.toJson();
+
+	// Now manipulate that byte array to insert the version information:
+	QByteArray finishedByteArray;
+	bool versionWritten = false;
+	std::string versionInfo = std::string("\n    \"version\": \"") + sarifVersion + "\",";
+	for (const auto& byte : jsonBytes) {
+		finishedByteArray.append(byte);
+		if (!versionWritten && byte == '{') {
+			finishedByteArray.append(versionInfo.c_str());
+			versionWritten = true;
+		}
+	}
+
 	// Write out the copy
 	QFile newFile(QString::fromStdString(file));
 	newFile.open(QIODevice::OpenModeFlag::Truncate | QIODevice::OpenModeFlag::WriteOnly);
 	if (newFile.isOpen())
-		newFile.write(filteredJSONDoc.toJson());
+		newFile.write(finishedByteArray);
 	else
 		throw std::runtime_error("Could not open requested file for writing");
+
 }
 
 std::vector<std::tuple<std::string, std::string>> SARIF::Rules() const

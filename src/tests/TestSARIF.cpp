@@ -26,6 +26,8 @@
 #include <QTemporaryFile>
 #include "../SARIF.h"
 #include <memory>
+#include <fstream>
+#include <regex>
 
 
 TEST_CASE("Fail on non-existent file", "[sarif]") {
@@ -255,4 +257,37 @@ TEST_CASE("Rule counts are correct", "[sarif]") {
 	REQUIRE(rules["rule1"] == 2);
 	REQUIRE(rules["rule2"] == 1);;
 	REQUIRE(rules["rule3"] == 0);
+}
+
+TEST_CASE("Exported file puts version at the top", "[sarif]") {
+	// Although the JSON standard is nominally unordered, SARIF actually specifies that the
+	// first element in the file should be a version string. So we can't actually just use
+	// pure JSON parsing either to read or write this data, because the element order is
+	// undefined (and will be alphabetical, in the case of Qt's parser).
+
+	auto sarif = SARIF("SmallValidA.sarif");
+	QTemporaryFile tempFile;
+	tempFile.open();
+	std::string filename = tempFile.fileName().toStdString() + ".sarif";
+	tempFile.close();
+	sarif.Export(filename);
+
+	std::ifstream exportedFile(filename);
+
+	std::regex version("\"version\"\\s*:\\s\".*\"");
+	std::regex data("[A-za-z0-9]");
+	while (exportedFile.good()) {
+		std::string line;
+		std::getline(exportedFile, line);
+		
+		bool lineHasData = std::regex_search(line, data);
+		bool lineHasVersion = std::regex_search(line, version);
+
+		if (lineHasData) {
+			if (lineHasVersion) {
+				return; // We passed the test
+			}
+			FAIL("Exported file does not start with the version element");
+		}
+	}
 }

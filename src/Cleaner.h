@@ -166,6 +166,10 @@ private:
 	QString _infile;
 	QString _outfile;
 
+	QStringList _suppressedRules;
+	QStringList _fileFilters;
+	QString _newBase;
+
 	SARIF _sarif;
 };
 

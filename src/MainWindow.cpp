@@ -158,6 +158,7 @@ void MainWindow::on_removeFileFilterButton_clicked()
 	}
 	std::sort(rowsToRemove.begin(), rowsToRemove.end(), std::greater<int>());
 	for (auto row : rowsToRemove) {
+		_cleaner->RemoveLocationFilter(ui->fileFiltersTable->item(row, 0)->text());
 		ui->fileFiltersTable->removeRow(row);
 	}
 }
@@ -179,6 +180,7 @@ void MainWindow::on_newFileFilterButton_clicked()
 	ui->fileFiltersTable->setItem(row, 0, filter);
 	ui->fileFiltersTable->setItem(row, 1, count);
 	ui->fileFiltersTable->setItem(row, 2, note);
+	_cleaner->AddLocationFilter(std::get<0>(filesToFilter));
 }
 
 void MainWindow::on_removeRuleButton_clicked()
@@ -194,6 +196,7 @@ void MainWindow::on_removeRuleButton_clicked()
 	}
 	std::sort(rowsToRemove.begin(), rowsToRemove.end(), std::greater<int>());
 	for (auto row : rowsToRemove) {
+		_cleaner->UnsuppressRule(ui->suppressedRulesTable->item(row,0)->text());
 		ui->suppressedRulesTable->removeRow(row);
 	}
 }
@@ -205,6 +208,7 @@ void MainWindow::on_newRuleButton_clicked()
 	ui->suppressedRulesTable->setRowCount(start + std::get<0>(rulesToSuppress).count());
 	int row = start;
 	for (const auto &rule : std::get<0>(rulesToSuppress)) {
+		_cleaner->SuppressRule(rule);
 		QTableWidgetItem* name = new QTableWidgetItem(rule);
 		QTableWidgetItem* note = new QTableWidgetItem(std::get<1>(rulesToSuppress));
 		ui->suppressedRulesTable->setItem(row, 0, name);
@@ -217,15 +221,6 @@ void MainWindow::on_cleanButton_clicked()
 	ui->cleanButton->setDisabled(true);
 
 	_cleaner->SetBase(ui->basePathLineEdit->text());
-
-	for (int row = 0; row < ui->fileFiltersTable->rowCount(); ++row) {
-		_cleaner->AddLocationFilter(ui->fileFiltersTable->item(row,0)->text());
-	}
-
-	for (int row = 0; row < ui->suppressedRulesTable->rowCount(); ++row) {
-		_cleaner->SuppressRule(ui->suppressedRulesTable->item(row,0)->text());
-	}
-
 	_cleaner->SetOutfile(ui->outputFileLineEdit->text());
 
 	_loadingDialog = std::make_unique<LoadingSARIF>(this);
@@ -479,10 +474,11 @@ void MainWindow::loadVersion1(const QJsonDocument& doc)
 
 	QString basePath = data["basePath"].toString();
 	ui->basePathLineEdit->setText(basePath);
+	_cleaner->SetBase(basePath);
 
 	QJsonArray ruleFilters = data["ruleFilters"].toArray();
-	int row = 0;
-	ui->suppressedRulesTable->setRowCount(ruleFilters.count());
+	int row = ui->suppressedRulesTable->rowCount();
+	ui->suppressedRulesTable->setRowCount(row+ruleFilters.count());
 	for (const auto& rule : ruleFilters) {
 		QString ruleText = rule.toObject()["rule"].toString();
 		QString ruleNote = rule.toObject()["note"].toString();
@@ -491,25 +487,18 @@ void MainWindow::loadVersion1(const QJsonDocument& doc)
 		QTableWidgetItem* note = new QTableWidgetItem(ruleNote);
 		ui->suppressedRulesTable->setItem(row, 0, name);
 		ui->suppressedRulesTable->setItem(row, 1, note);
+		_cleaner->SuppressRule(ruleText);
 		++row;
 	}
 
 	QJsonArray fileFilters = data["fileFilters"].toArray();
-	row = 0;
-	ui->fileFiltersTable->setRowCount(fileFilters.count());
+	row = ui->fileFiltersTable->rowCount();
+	ui->fileFiltersTable->setRowCount(row+fileFilters.count());
 	auto currentFileList = _cleaner->GetFiles();
 	for (const auto& rule : fileFilters) {
 		QString regexText = rule.toObject()["regex"].toString();
 		QString regexNote = rule.toObject()["note"].toString();
-
-		// Figure out how many hits we have in the current data set against this loaded filter:
-		std::regex compiledRegex(regexText.toStdString());
-		int matches = 0;
-		for (const auto& file : currentFileList) {
-			if (std::regex_search(file.toStdString(), compiledRegex)) {
-				++matches;
-			}
-		}
+		auto matches = _cleaner->AddLocationFilter(regexText);
 
 		QTableWidgetItem* regex = new QTableWidgetItem(regexText);
 		QTableWidgetItem* note = new QTableWidgetItem(regexNote);

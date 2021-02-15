@@ -89,48 +89,45 @@ void Cleaner::SetBase(const QString& newBase)
 	else if (*oldBase.rbegin() == '\\' && *adjustedBase.rbegin() != '\\') {
 		adjustedBase += "\\";
 	}
-
-	_sarif.SetBase(newBase.toStdString());
+	_newBase = adjustedBase;
 }
 
 int Cleaner::SuppressRule(const QString& ruleID)
 {
+	if (!_suppressedRules.contains(ruleID)) {
+		_suppressedRules.append(ruleID);
+	}
 	return _sarif.SuppressRule(ruleID.toStdString());
 }
 
 void Cleaner::UnsuppressRule(const QString& ruleID)
 {
+	_suppressedRules.removeOne(ruleID);
 	_sarif.UnsuppressRule(ruleID.toStdString());
 }
 
 QStringList Cleaner::SuppressedRules() const
 {
-	QStringList rules;
-	auto internalRules = _sarif.SuppressedRules();
-	for (const auto& rule : internalRules) {
-		rules.append(QString::fromStdString(rule));
-	}
-	return rules;
+	return _suppressedRules;
 }
 
 int Cleaner::AddLocationFilter(const QString& regex)
 {
+	if (!_fileFilters.contains(regex)) {
+		_fileFilters.append(regex);
+	}
 	return _sarif.AddLocationFilter(regex.toStdString());
 }
 
 void Cleaner::RemoveLocationFilter(const QString& regex)
 {
+	_fileFilters.removeOne(regex);
 	_sarif.RemoveLocationFilter(regex.toStdString());
 }
 
 QStringList Cleaner::LocationFilters() const
 {
-	QStringList filters;
-	auto internalFilters = _sarif.LocationFilters();
-	for (const auto& filter : internalFilters) {
-		filters.append(QString::fromStdString(filter));
-	}
-	return filters;
+	return _fileFilters;
 }
 
 void Cleaner::run()
@@ -140,6 +137,9 @@ void Cleaner::run()
 		exit(-1);
 		return;
 	}
+
+	// Reset the SARIF object:
+	_sarif = SARIF();
 
 	try {
 		_sarif.Load(_infile.toStdString(), std::bind(&Cleaner::isInterruptionRequested, QThread::currentThread()));
@@ -154,6 +154,26 @@ void Cleaner::run()
 	if (_outfile.isEmpty()) {
 		exit(0);
 		return;
+	}
+
+	_sarif.SetBase(_newBase.toStdString());
+
+	for (const auto& fileFilter : _fileFilters) {
+		_sarif.AddLocationFilter(fileFilter.toStdString());
+		if (QThread::currentThread()->isInterruptionRequested()) {
+			emit errorOccurred(tr("Operation cancelled"));
+			exit(-1);
+			return;
+		}
+	}
+
+	for (const auto& rule : _suppressedRules) {
+		_sarif.SuppressRule(rule.toStdString());
+		if (QThread::currentThread()->isInterruptionRequested()) {
+			emit errorOccurred(tr("Operation cancelled"));
+			exit(-1);
+			return;
+		}
 	}
 
 	if (_infile == _outfile) {
