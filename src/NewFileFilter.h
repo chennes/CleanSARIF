@@ -43,7 +43,7 @@ class NewFileFilter : public QDialog
 
 public:
 	explicit NewFileFilter(QWidget* parent);
-	~NewFileFilter() = default;
+	~NewFileFilter();
 
 	void SetFiles(const QStringList& allFiles);
 

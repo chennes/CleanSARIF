@@ -43,7 +43,7 @@ class LoadingSARIF : public QDialog
 
 public:
 	explicit LoadingSARIF(QWidget* parent);
-	~LoadingSARIF() = default;
+	~LoadingSARIF();
 
 private:
 	std::unique_ptr<Ui::LoadingSARIF> ui;

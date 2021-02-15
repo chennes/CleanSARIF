@@ -48,6 +48,10 @@ NewFileFilter::NewFileFilter(QWidget* parent) :
 	settings.endGroup();
 }
 
+NewFileFilter::~NewFileFilter()
+{
+}
+
 void NewFileFilter::SetFiles(const QStringList& allFiles)
 {
 	_allFiles = allFiles;

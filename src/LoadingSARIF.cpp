@@ -33,3 +33,7 @@ LoadingSARIF::LoadingSARIF(QWidget* parent) :
 	ui->setupUi(this);
 	ui->progressIndicator->startAnimation();
 }
+
+LoadingSARIF::~LoadingSARIF()
+{
+}

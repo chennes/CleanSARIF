@@ -46,6 +46,10 @@ NewRuleSuppression::NewRuleSuppression(QWidget* parent) :
 
 }
 
+NewRuleSuppression::~NewRuleSuppression()
+{
+}
+
 void NewRuleSuppression::SetRulesList(const std::vector<std::tuple<QString, int>>& ruleList)
 {
 	ui->tableWidget->setRowCount(static_cast<int>(ruleList.size()));

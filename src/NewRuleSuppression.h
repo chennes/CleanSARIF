@@ -43,7 +43,7 @@ class NewRuleSuppression : public QDialog
 
 public:
 	explicit NewRuleSuppression(QWidget* parent);
-	~NewRuleSuppression() = default;
+	~NewRuleSuppression();
 
 	void SetRulesList(const std::vector<std::tuple<QString, int>>& ruleList);
 
