@@ -25,6 +25,7 @@
 #include <QFile>
 #include <QTemporaryFile>
 #include "../SARIF.h"
+#include <memory>
 
 
 TEST_CASE("Fail on non-existent file", "[sarif]") {
