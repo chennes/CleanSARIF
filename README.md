@@ -10,7 +10,7 @@ A small GUI app to clean a SARIF (Static Analysis Results Interchange Format) fi
 * Makes progress towards world peace by making developers using static analysis results less cranky.
 
 ## Installing on Windows
-Download either the standalone 7-zip file or the installer executable file from the [releases page](https://github.com/chennes/SARIFCleaner/releases/).
+Download either the standalone 7-zip file or the installer executable file from the [releases page](https://github.com/chennes/SARIFCleaner/releases).
 
 ## Building from source
 
