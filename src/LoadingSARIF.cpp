@@ -23,6 +23,7 @@
 #include "LoadingSARIF.h"
 
 #pragma warning(push, 1) 
+#include "QProgressIndicator.h"
 #include "ui_LoadingSARIF.h"
 #pragma warning(pop)
 
