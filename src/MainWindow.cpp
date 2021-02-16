@@ -341,6 +341,9 @@ void MainWindow::disableForNoInput()
 	ui->cleanButton->setDefault(false);
 	ui->browseInputFileButton->setDefault(true);	
 	
+	ui->outputFileLabel->setDisabled(true);
+	ui->outputFileLineEdit->setDisabled(true);
+	ui->browseOutputFileButton->setDisabled(true);
 	ui->replaceURICheckbox->setDisabled(true);
 	ui->browseBasePathButton->setDisabled(true);
 	ui->basePathLineEdit->setDisabled(true);
@@ -362,6 +365,9 @@ void MainWindow::enableForInput()
 	ui->cleanButton->setDefault(true);
 	ui->browseInputFileButton->setDefault(false);
 
+	ui->outputFileLabel->setEnabled(true);
+	ui->outputFileLineEdit->setEnabled(true);
+	ui->browseOutputFileButton->setEnabled(true);
 	ui->replaceURICheckbox->setEnabled(true);
 	//ui->browseBasePathButton->setEnabled(true); // Enabled on check of replaceURICheckbox
 	//ui->basePathLineEdit->setEnabled(true); // Enabled on check of replaceURICheckbox
