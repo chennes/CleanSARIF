@@ -33,6 +33,7 @@ LoadingSARIF::LoadingSARIF(QWidget* parent) :
 {
 	ui->setupUi(this);
 	ui->progressIndicator->startAnimation();
+	this->setWindowFlags(Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint | Qt::X11BypassWindowManagerHint);
 }
 
 LoadingSARIF::~LoadingSARIF()

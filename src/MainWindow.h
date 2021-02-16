@@ -92,6 +92,7 @@ private slots:
 	void on_loadFiltersButton_clicked();
 	void on_cleanButton_clicked();
 	void on_closeButton_clicked();
+	void on_replaceURICheckbox_stateChanged(int state);
 
 	void fileFilterSelectionChanged();
 	void ruleSuppressionSelectionChanged();

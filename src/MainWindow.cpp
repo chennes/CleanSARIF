@@ -61,12 +61,22 @@ MainWindow::MainWindow(QWidget* parent) :
 {
 	ui->setupUi(this);
 	setWindowIcon(QIcon(":/ui_icon.svg"));
+
+	auto squeegie = QIcon(":/squeegie.svg");
+	auto plus = QIcon(":/plus.svg");
+	auto minus = QIcon(":/minus.svg");
+
+	ui->cleanButton->setIcon(squeegie);
+	ui->newFileFilterButton->setIcon(plus);
+	ui->newRuleButton->setIcon(plus);
+	ui->removeFileFilterButton->setIcon(minus);
+	ui->removeRuleButton->setIcon(minus);
 	
 #if __cplusplus >= 202000L
 	std::string version = std::format("v{}.{}.{}", CleanSARIF_VERSION_MAJOR, CleanSARIF_VERSION_MINOR, CleanSARIF_VERSION_PATCH);
 #else
 	std::ostringstream s;
-	s << "v" << CleanSARIF_VERSION_MAJOR << "." << CleanSARIF_VERSION_MINOR << "." << CleanSARIF_VERSION_PATCH << " RC1";
+	s << "v" << CleanSARIF_VERSION_MAJOR << "." << CleanSARIF_VERSION_MINOR << "." << CleanSARIF_VERSION_PATCH << " RC2";
 	std::string version = s.str();
 #endif
 	ui->versionLabel->setText(QString::fromStdString(version));
@@ -220,7 +230,9 @@ void MainWindow::on_cleanButton_clicked()
 {
 	ui->cleanButton->setDisabled(true);
 
-	_cleaner->SetBase(ui->basePathLineEdit->text());
+	if (ui->replaceURICheckbox->isChecked()) {
+		_cleaner->SetBase(ui->basePathLineEdit->text());
+	}
 	_cleaner->SetOutfile(ui->outputFileLineEdit->text());
 
 	_loadingDialog = std::make_unique<LoadingSARIF>(this);
@@ -247,6 +259,18 @@ void MainWindow::on_closeButton_clicked()
 	settings.endGroup();
 	settings.sync();
 	QApplication::quit();
+}
+
+void MainWindow::on_replaceURICheckbox_stateChanged(int state)
+{
+	if (state == Qt::CheckState::Checked) {
+		ui->browseBasePathButton->setEnabled(true);
+		ui->basePathLineEdit->setEnabled(true);
+	}
+	else {
+		ui->browseBasePathButton->setEnabled(false);
+		ui->basePathLineEdit->setEnabled(false);
+	}
 }
 
 void MainWindow::fileFilterSelectionChanged()
@@ -317,7 +341,7 @@ void MainWindow::disableForNoInput()
 	ui->cleanButton->setDefault(false);
 	ui->browseInputFileButton->setDefault(true);	
 	
-	ui->basePathLabel->setDisabled(true);
+	ui->replaceURICheckbox->setDisabled(true);
 	ui->browseBasePathButton->setDisabled(true);
 	ui->basePathLineEdit->setDisabled(true);
 	ui->fileFiltersLabel->setDisabled(true);
@@ -338,9 +362,9 @@ void MainWindow::enableForInput()
 	ui->cleanButton->setDefault(true);
 	ui->browseInputFileButton->setDefault(false);
 
-	ui->basePathLabel->setEnabled(true);
-	ui->browseBasePathButton->setEnabled(true);
-	ui->basePathLineEdit->setEnabled(true);
+	ui->replaceURICheckbox->setEnabled(true);
+	//ui->browseBasePathButton->setEnabled(true); // Enabled on check of replaceURICheckbox
+	//ui->basePathLineEdit->setEnabled(true); // Enabled on check of replaceURICheckbox
 	ui->fileFiltersLabel->setEnabled(true);
 	ui->fileFiltersTable->setEnabled(true);
 	ui->suppressedRulesLabel->setEnabled(true);
@@ -404,7 +428,9 @@ void MainWindow::on_saveFiltersButton_clicked()
 		QJsonObject data;
 
 		// Base path
-		data.insert("basePath", ui->basePathLineEdit->text());
+		if (ui->replaceURICheckbox->isChecked()) {
+			data.insert("basePath", ui->basePathLineEdit->text());
+		}
 
 		// Rule filters
 		QJsonArray ruleFilters;
@@ -472,42 +498,48 @@ void MainWindow::loadVersion1(const QJsonDocument& doc)
 {
 	QJsonObject data = doc.object()["xdata"].toObject();
 
-	QString basePath = data["basePath"].toString();
-	ui->basePathLineEdit->setText(basePath);
-	_cleaner->SetBase(basePath);
-
-	QJsonArray ruleFilters = data["ruleFilters"].toArray();
-	int row = ui->suppressedRulesTable->rowCount();
-	ui->suppressedRulesTable->setRowCount(row+ruleFilters.count());
-	for (const auto& rule : ruleFilters) {
-		QString ruleText = rule.toObject()["rule"].toString();
-		QString ruleNote = rule.toObject()["note"].toString();
-
-		QTableWidgetItem* name = new QTableWidgetItem(ruleText);
-		QTableWidgetItem* note = new QTableWidgetItem(ruleNote);
-		ui->suppressedRulesTable->setItem(row, 0, name);
-		ui->suppressedRulesTable->setItem(row, 1, note);
-		_cleaner->SuppressRule(ruleText);
-		++row;
+	if (data.contains("basePath") && data["basePath"].isString()) {
+		QString basePath = data["basePath"].toString();
+		ui->basePathLineEdit->setText(basePath);
+		ui->replaceURICheckbox->setChecked(true);
 	}
 
-	QJsonArray fileFilters = data["fileFilters"].toArray();
-	row = ui->fileFiltersTable->rowCount();
-	ui->fileFiltersTable->setRowCount(row+fileFilters.count());
-	auto currentFileList = _cleaner->GetFiles();
-	for (const auto& rule : fileFilters) {
-		QString regexText = rule.toObject()["regex"].toString();
-		QString regexNote = rule.toObject()["note"].toString();
-		auto matches = _cleaner->AddLocationFilter(regexText);
+	if (data.contains("ruleFilters") && data["ruleFilters"].isArray()) {
+		QJsonArray ruleFilters = data["ruleFilters"].toArray();
+		int row = ui->suppressedRulesTable->rowCount();
+		ui->suppressedRulesTable->setRowCount(row + ruleFilters.count());
+		for (const auto& rule : ruleFilters) {
+			QString ruleText = rule.toObject()["rule"].toString();
+			QString ruleNote = rule.toObject()["note"].toString();
 
-		QTableWidgetItem* regex = new QTableWidgetItem(regexText);
-		QTableWidgetItem* note = new QTableWidgetItem(regexNote);
-		QTableWidgetItem* count = new QTableWidgetItem();
-		count->setData(Qt::EditRole, matches); // Retain as integer for sorting
-		ui->fileFiltersTable->setItem(row, 0, regex);
-		ui->fileFiltersTable->setItem(row, 1, count);
-		ui->fileFiltersTable->setItem(row, 2, note);
-		++row;
+			QTableWidgetItem* name = new QTableWidgetItem(ruleText);
+			QTableWidgetItem* note = new QTableWidgetItem(ruleNote);
+			ui->suppressedRulesTable->setItem(row, 0, name);
+			ui->suppressedRulesTable->setItem(row, 1, note);
+			_cleaner->SuppressRule(ruleText);
+			++row;
+		}
+	}
+
+	if (data.contains("fileFilters") && data["fileFilters"].isArray()) {
+		QJsonArray fileFilters = data["fileFilters"].toArray();
+		int row = ui->fileFiltersTable->rowCount();
+		ui->fileFiltersTable->setRowCount(row + fileFilters.count());
+		auto currentFileList = _cleaner->GetFiles();
+		for (const auto& rule : fileFilters) {
+			QString regexText = rule.toObject()["regex"].toString();
+			QString regexNote = rule.toObject()["note"].toString();
+			auto matches = _cleaner->AddLocationFilter(regexText);
+
+			QTableWidgetItem* regex = new QTableWidgetItem(regexText);
+			QTableWidgetItem* note = new QTableWidgetItem(regexNote);
+			QTableWidgetItem* count = new QTableWidgetItem();
+			count->setData(Qt::EditRole, matches); // Retain as integer for sorting
+			ui->fileFiltersTable->setItem(row, 0, regex);
+			ui->fileFiltersTable->setItem(row, 1, count);
+			ui->fileFiltersTable->setItem(row, 2, note);
+			++row;
+		}
 	}
 }
 

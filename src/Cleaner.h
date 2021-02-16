@@ -169,6 +169,7 @@ private:
 	QStringList _suppressedRules;
 	QStringList _fileFilters;
 	QString _newBase;
+	bool _overrideBase = false;
 
 	SARIF _sarif;
 };

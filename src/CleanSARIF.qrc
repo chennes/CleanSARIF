@@ -1,5 +1,8 @@
 <!DOCTYPE RCC><RCC version="1.0">
 <qresource>
     <file>ui_icon.svg</file>
+    <file>squeegie.svg</file>
+    <file>plus.svg</file>
+    <file>minus.svg</file>
 </qresource>
 </RCC>

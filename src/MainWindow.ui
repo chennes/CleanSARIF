@@ -86,17 +86,17 @@
         </property>
        </widget>
       </item>
-      <item row="3" column="0">
-       <widget class="QLabel" name="basePathLabel">
-        <property name="text">
-         <string>Base path:</string>
-        </property>
-       </widget>
-      </item>
       <item row="2" column="0" colspan="3">
        <widget class="Line" name="line_2">
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="0">
+       <widget class="QCheckBox" name="replaceURICheckbox">
+        <property name="text">
+         <string>Replace URI:</string>
         </property>
        </widget>
       </item>

@@ -80,6 +80,7 @@ QString Cleaner::GetBase() const
 
 void Cleaner::SetBase(const QString& newBase)
 {
+	_overrideBase = true;
 	// If the old base ended with a slash or backslash, make sure the new one does too
 	auto oldBase = QString::fromStdString(_sarif.GetBase());
 	QString adjustedBase = newBase;
@@ -156,7 +157,9 @@ void Cleaner::run()
 		return;
 	}
 
-	_sarif.SetBase(_newBase.toStdString());
+	if (_overrideBase) {
+		_sarif.SetBase(_newBase.toStdString());
+	}
 
 	for (const auto& fileFilter : _fileFilters) {
 		_sarif.AddLocationFilter(fileFilter.toStdString());
